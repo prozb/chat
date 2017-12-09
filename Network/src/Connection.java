@@ -62,6 +62,9 @@ public class Connection{
         connectionThread.start();
     }
 
+    private void processInMessages(String msg){
+
+    }
     /**
      * Method sends String on client
      * @param msg String must be sent
