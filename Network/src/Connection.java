@@ -13,6 +13,7 @@ public class Connection{
     private BufferedReader in;
     private IListenable actionListener;
     private String clientName;
+    private boolean registrated;
 
     /**
      *
@@ -36,7 +37,9 @@ public class Connection{
         //create streams to handle with data
         this.in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         this.out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
-        this.clientName = "pidor";
+        //this.clientName = "pidor";
+        //user must be registrated to send messages
+        this.registrated = false;
         //creation new thread
         this.connectionThread = new Thread(new Runnable() {
             @Override
