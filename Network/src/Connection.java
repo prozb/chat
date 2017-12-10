@@ -72,20 +72,20 @@ public class Connection{
     }
 
     private void processInMessages(String msg){
-        if(disconnected(msg))
+        if(disconnectedCommand(msg))
             disconnect();
         if(registrated){
-            if(connected(msg)){
+            if(connectedCommand(msg)){
                 System.out.println("user " + clientName + " is trying to change name.");
                 sendString("you cannot change your name. ");
             }else {
-                if(!msg.equals("disconnect:") && !msg.equals(""))
-                    actionListener.receveMessage(this, msg);
+                if(messageCommand(msg))
+                    actionListener.receveMessage(this, msg.replaceAll("message: ", ""));
             }
         }else {
             //if user isn't registrated and used correct command,
             //register this user
-            if(!registrated && connected(msg)){
+            if(!registrated && connectedCommand(msg)){
                 registrated = true;
                 this.clientName = msg.replaceAll("connect:\\s", "");
                 sendString("Welcome in this chat dear " + clientName);
@@ -96,14 +96,18 @@ public class Connection{
             }
         }
     }
-
-    private boolean disconnected(String val){
+    private boolean messageCommand(String val){
+        pattern = Pattern.compile("^message: .+");
+        matcher = pattern.matcher(val);
+        return matcher.matches();
+    }
+    private boolean disconnectedCommand(String val){
         pattern = Pattern.compile("^disconnect:$");
         matcher = pattern.matcher(val);
         return matcher.matches();
     }
-    private boolean connected(String val){
-        pattern = Pattern.compile("^connect: [a-zA-Z0-9]{3,30}");
+    private boolean connectedCommand(String val){
+        pattern = Pattern.compile("^connect: [a-zA-Z0-9_]{3,30}");
         matcher = pattern.matcher(val);
         return matcher.matches();
     }
@@ -135,7 +139,7 @@ public class Connection{
         } catch (IOException e) {
             //send problem on listener
             actionListener.isExcepted(this, e);
-            actionListener.receveMessage(this, toString() + " disconnected.");
+            actionListener.receveMessage(this, toString() + " disconnectedCommand.");
         }
     }
 
