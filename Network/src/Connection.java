@@ -72,12 +72,15 @@ public class Connection{
     }
 
     private void processInMessages(String msg){
+        if(disconnected(msg))
+            disconnect();
         if(registrated){
             if(connected(msg)){
                 System.out.println("user " + clientName + " is trying to change name.");
                 sendString("you cannot change your name. ");
             }else {
-                actionListener.receveMessage(this, msg);
+                if(!msg.equals("disconnect:") && !msg.equals(""))
+                    actionListener.receveMessage(this, msg);
             }
         }else {
             //if user isn't registrated and used correct command,
@@ -94,9 +97,13 @@ public class Connection{
         }
     }
 
+    private boolean disconnected(String val){
+        pattern = Pattern.compile("^disconnect:$");
+        matcher = pattern.matcher(val);
+        return matcher.matches();
+    }
     private boolean connected(String val){
         pattern = Pattern.compile("^connect: [a-zA-Z0-9]{3,30}");
-
         matcher = pattern.matcher(val);
         return matcher.matches();
     }
