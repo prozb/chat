@@ -26,29 +26,29 @@ public class Server implements IListenable{
         }
     }
     @Override
-    public void isExcepted(Connection connection, Exception e) {
+    public synchronized void isExcepted(Connection connection, Exception e) {
         System.out.println(connection.toString() + " excepted: " + e);
     }
 
     @Override
-    public void receveMessage(Connection connection, String value) {
-        System.out.println(connection.toString() + " : " + value);
-        sendOnAll(connection, connection.toString() + " : " + value);
+    public synchronized void receveMessage(Connection connection, String value) {
+        System.out.println(getClientName(connection) + ": " + value);
+        sendOnAll(connection, getClientName(connection) + " : " + value);
     }
 
     @Override
-    public void connected(Connection connection) {
+    public synchronized void connected(Connection connection) {
         connections.add(connection);
-        System.out.println(connection.toString() + " connected.");
-        sendOnAll(connection, connection.toString() + " connected.");
+        System.out.println(getClientName(connection) + " connected.");
         connection.sendString("welcome in this chat! ");
+        connection.sendString("please, confirm registration in form \"connect: USER_NAME\"");
     }
 
     @Override
-    public void disconnectClient(Connection connection) {
+    public synchronized void disconnectClient(Connection connection) {
         connections.remove(connection);
-        System.out.println(connection.toString() + " disconnected.");
-        sendOnAll(connection, connection.toString() + " disconnected.");
+        System.out.println(getClientName(connection) + " disconnected.");
+        sendOnAll(connection, getClientName(connection) + " disconnected.");
     }
 
     /**
@@ -59,9 +59,29 @@ public class Server implements IListenable{
     public void sendOnAll(Connection connection, String msg){
         //send message on all clients except one client
         for(Connection val : connections){
-            if(!val.equals(connection)){
+            if(!val.equals(connection) && val.isRegistrated()){
                 val.sendString(msg);
             }
         }
     }
+
+    public String getClientName(Connection connection){
+        return connection.getClientName() != null ? connection.getClientName() :
+                connection.toString();
+    }
+
+    /**
+     * Proves if this client can have this name
+     * @param connection Current connection
+     * @param name Name to check, whether or not exists.
+     * @return exist or no
+     */
+/*    public boolean checkName(Connection connection, String name){
+        boolean exists = false;
+        for(Connection var : connections){
+            if(var.getClientName().equals(name))
+                exists = true;
+        }
+        return exists;
+    }*/
 }

@@ -1,5 +1,7 @@
 import java.io.*;
 import java.net.Socket;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Class Connection describes connection of each client independent
@@ -14,6 +16,9 @@ public class Connection{
     private IListenable actionListener;
     private String clientName;
     private boolean registrated;
+    private String connectPattern;
+    private Pattern pattern;
+    private Matcher matcher;
 
     /**
      *
@@ -41,6 +46,7 @@ public class Connection{
         //user must be registrated to send messages
         this.registrated = false;
         //creation new thread
+        //this.connectPattern = "^" + Commands.CONNECT + ;
         this.connectionThread = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -51,7 +57,7 @@ public class Connection{
                         msg = in.readLine();
                         if(msg != null) {
                             //send message on listener
-                            actionListener.receveMessage(Connection.this, msg);
+                            processInMessages(msg);
                         }else disconnect();
                     } catch (IOException e) {
                         //if cannot receive message, disconnect and handle exception
@@ -66,7 +72,33 @@ public class Connection{
     }
 
     private void processInMessages(String msg){
+        if(registrated){
+            if(connected(msg)){
+                System.out.println("user " + clientName + " is trying to change name.");
+                sendString("you cannot change your name. ");
+            }else {
+                actionListener.receveMessage(this, msg);
+            }
+        }else {
+            //if user isn't registrated and used correct command,
+            //register this user
+            if(!registrated && connected(msg)){
+                registrated = true;
+                this.clientName = msg.replaceAll("connect:\\s", "");
+                sendString("Welcome in this chat dear " + clientName);
+                actionListener.receveMessage(this, "user " + clientName + " registred successfully!");
+            }else{
+                System.out.println("user " + socket.getInetAddress() + " is trying to register.");
+                sendString("please, confirm registration in form \"connect: USER_NAME\"");
+            }
+        }
+    }
 
+    private boolean connected(String val){
+        pattern = Pattern.compile("^connect: [a-zA-Z0-9]{3,30}");
+
+        matcher = pattern.matcher(val);
+        return matcher.matches();
     }
     /**
      * Method sends String on client
@@ -105,6 +137,22 @@ public class Connection{
      */
     @Override
     public String toString() {
-        return socket.getInetAddress() + " " + clientName;
+        return socket.getInetAddress() + "";
+    }
+
+    /**
+     *
+     * @return Whether or not is the client registrated
+     */
+    public boolean isRegistrated() {
+        return registrated;
+    }
+
+    /**
+     *
+     * @return Clients name
+     */
+    public String getClientName(){
+        return clientName;
     }
 }
