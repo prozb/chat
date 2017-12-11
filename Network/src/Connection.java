@@ -16,7 +16,7 @@ public class Connection{
     private BufferedReader in;
     private IListenable actionListener;
     private String clientName;
-    private boolean registrated;
+    private boolean loggedIn;
     private String connectPattern;
     private Pattern pattern;
     private Matcher matcher;
@@ -46,8 +46,8 @@ public class Connection{
         this.in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         this.out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
         //this.clientName = "pidor";
-        //user must be registrated to send messages
-        this.registrated = false;
+        //user must be loggedIn to send messages
+        this.loggedIn = false;
         this.names = new ArrayList<>();
         //creation new thread
         //this.connectPattern = "^" + Constants.CONNECT + ;
@@ -83,7 +83,33 @@ public class Connection{
         if(disconnectedCommand(msg))
             disconnect();
 
-        if(registrated){
+        if(messageCommand(msg) && isLoggedIn()){
+            actionListener.receveMessage(this, msg.replaceAll("message: ", ""));
+        }
+        //receive names from server
+        actionListener.receiveNames(this);
+
+        if(connectedCommand(msg) && !isLoggedIn() && correctName(msg) && !nameExists(msg)){
+            loggedIn = true;
+            sendString("connect: ok");
+            this.clientName = msg.replaceAll("connect:\\s", "");
+            //sendString("Welcome in this chat dear " + clientName);
+            actionListener.receveMessage(this, "logged in successfully!");
+            actionListener.receiveNames(this);
+        }else if(!isLoggedIn() && connectedCommand(msg) && correctName(msg) && nameExists(msg)){
+            sendString("refused: name_in_use");
+            System.out.println("user " + socket.getInetAddress() + " is trying to use choosen name.");
+        }else if(!isLoggedIn() && connectedCommand(msg) && !correctName(msg) && !nameExists(msg)){
+            sendString("refused: invalid_name");
+            System.out.println("user " + socket.getInetAddress() + " is trying to use choosen name.");
+        }else if(isLoggedIn() && connectedCommand(msg) && correctName(msg) && !nameExists(msg)){
+            System.out.println("user " + socket.getInetAddress() + " is trying change his name.");
+            sendString("refused: cannot_change_name");
+        }else{
+            System.out.println("user " + socket.getInetAddress() + " is trying to log in.");
+            sendString("refused: see_how_to_use_chat");
+        }
+     /*   if(loggedIn){
             if(connectedCommand(msg)){
                 System.out.println("user " + clientName + " is trying to change name.");
                 sendString("you cannot change your name. ");
@@ -91,13 +117,12 @@ public class Connection{
                 actionListener.receveMessage(this, msg.replaceAll("message: ", ""));
             }
         }else {
-            //if user isn't registrated and used correct command,
+            //if user isn't loggedIn and used correct command,
             //register this user
-            if(!registrated && connectedCommand(msg)){
+            if(!loggedIn && connectedCommand(msg)){
                 actionListener.receiveNames(this);
-                //System.out.println(names.toString());
                 if(!nameExists(msg.replaceAll("connect:\\s", ""))) {
-                    registrated = true;
+                    loggedIn = true;
                     sendString("connect: ok");
                     this.clientName = msg.replaceAll("connect:\\s", "");
                     //sendString("Welcome in this chat dear " + clientName);
@@ -108,9 +133,14 @@ public class Connection{
                 }
             }else{
                 System.out.println("user " + socket.getInetAddress() + " is trying to register.");
-                sendString("please, confirm registration in form \"connect: USER_NAME\"");
+                sendString("refused: invalid_name");
             }
-        }
+        }*/
+    }
+    private boolean correctName(String val){
+        pattern = Pattern.compile("^[a-zA-Z0-9_]{3,30}");
+        matcher = pattern.matcher(val.replaceAll("connect: ", ""));
+        return matcher.matches();
     }
     private boolean helpCommand(String val){
         pattern = Pattern.compile("^help:");
@@ -128,7 +158,7 @@ public class Connection{
         return matcher.matches();
     }
     private boolean connectedCommand(String val){
-        pattern = Pattern.compile("^connect: [a-zA-Z0-9_]{3,30}");
+        pattern = Pattern.compile("^connect: .{3,30}");
         matcher = pattern.matcher(val);
         return matcher.matches();
     }
@@ -179,10 +209,10 @@ public class Connection{
 
     /**
      *
-     * @return Whether or not is the client registrated
+     * @return Whether or not is the client loggedIn
      */
-    public boolean isRegistrated() {
-        return registrated;
+    public boolean isLoggedIn() {
+        return loggedIn;
     }
 
     /**
@@ -203,11 +233,12 @@ public class Connection{
 
     /**
      * @param val name to check in collection
-     * @return whether or not name exists
+     * @return returns true if name doesn't exist
      */
     private boolean nameExists(String val){
+        String valName = val.replaceAll("connect: ", "");
         for(String name : names){
-            if(name != null && val.equals(name)){
+            if(name != null && valName.equals(name)){
                 return true;
             }
         }

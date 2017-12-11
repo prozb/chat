@@ -49,7 +49,7 @@ public class Server implements IListenable{
     public synchronized void connected(Connection connection) {
         connections.add(connection);
         System.out.println(getClientName(connection) + " connected.");
-      /*  if(connection.isRegistrated()) {
+      /*  if(connection.isLoggedIn()) {
             connection.sendString("connect: ok");
         }*/
         //connection.sendString("welcome in this chat! ");
@@ -62,7 +62,7 @@ public class Server implements IListenable{
         names.clear();
         String name = null;
         for(Connection connection : connections){
-            if(connection.isRegistrated() && connection.getClientName() != null){
+            if(connection.isLoggedIn() && connection.getClientName() != null){
                 name = connection.getClientName();
                 names.add(name);
             }
@@ -82,6 +82,18 @@ public class Server implements IListenable{
     @Override
     public void receiveNames(Connection connection) {
         connection.setNames(nameList());
+        //send names on all users
+        if(connection.isLoggedIn() && names.toString() != null){
+            String val = names.toString();
+            val = val.replaceAll(",",":");
+            val = val.replaceAll("\\[","");
+            val = val.replaceAll("]","");
+
+            for(Connection var : connections){
+                var.sendString("namelist: " + val);
+            }
+            System.out.println("namelist: " + val);
+        }
     }
 
     /**
@@ -92,7 +104,7 @@ public class Server implements IListenable{
     public void sendOnAll(Connection connection, String msg){
         //send message on all clients except one client
         for(Connection val : connections){
-            if(!val.equals(connection) && val.isRegistrated()){
+            if(!val.equals(connection) && val.isLoggedIn()){
                 val.sendString(msg);
             }
         }
