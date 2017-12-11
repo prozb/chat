@@ -78,7 +78,7 @@ public class Connection{
     private void processInMessages(String msg){
         //help command processing
         if(helpCommand(msg)){
-            sendString("tape \"command: [NAME]\" to log in.\n\rtape \"disconnect: \" to disconnect\n\r" +
+            sendString("tape \"connect: [NAME]\" to log in.\n\rtape \"disconnect: \" to disconnect\n\r" +
                             "tape \"message: [MESSAGE]\" to send message (must be logged in)\n\r");
         }else
         //disconnect command processing
