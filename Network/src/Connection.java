@@ -72,6 +72,10 @@ public class Connection{
     }
 
     private void processInMessages(String msg){
+        if(helpCommand(msg)){
+            sendString("tape \"command: [NAME]\" to log in.\n\rtape \"disconnect: \" to disconnect\n\r" +
+                            "tape \"message: [MESSAGE]\" to send message (must be logged in)\n\r");
+        }
         if(disconnectedCommand(msg))
             disconnect();
 
@@ -97,6 +101,11 @@ public class Connection{
                 sendString("please, confirm registration in form \"connect: USER_NAME\"");
             }
         }
+    }
+    private boolean helpCommand(String val){
+        pattern = Pattern.compile("^help:");
+        matcher = pattern.matcher(val);
+        return matcher.matches();
     }
     private boolean messageCommand(String val){
         pattern = Pattern.compile("^message: .+");

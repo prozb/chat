@@ -53,7 +53,8 @@ public class Server implements IListenable{
         }*/
         //connection.sendString("welcome in this chat! ");
         //connection.sendString(nameList());
-        connection.sendString("please, confirm registration in form \"connect: USER_NAME\"");
+        connection.sendString("tape \"help:\" to use this chat. ");
+        //connection.sendString("please, confirm registration in form \"connect: USER_NAME\"");
     }
 
     private String nameList(){
