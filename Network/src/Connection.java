@@ -80,16 +80,17 @@ public class Connection{
         if(helpCommand(msg)){
             sendString("tape \"command: [NAME]\" to log in.\n\rtape \"disconnect: \" to disconnect\n\r" +
                             "tape \"message: [MESSAGE]\" to send message (must be logged in)\n\r");
-        }
+        }else
         //disconnect command processing
-        if(disconnectedCommand(msg))
+        if(disconnectedCommand(msg)){
             disconnect();
+        }else
         //message command processing
         if(messageCommand(msg) && isLoggedIn()){
             actionListener.receveMessage(this, msg.replaceAll("message: ", ""));
-        }
+        }else
         //receive names from server
-        actionListener.receiveNames(this);
+        //actionListener.receiveNames(this);
         //don't touch this stuff
         if(connectedCommand(msg) && !isLoggedIn() && correctName(msg) && !nameExists(msg)){
             loggedIn = true;
