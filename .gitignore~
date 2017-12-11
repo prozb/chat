@@ -3,6 +3,9 @@
 *.iml
 .iml
 *.class
-.class
 out/*
+*/out/
+*.txt
+out/*
+
 

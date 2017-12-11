@@ -34,4 +34,10 @@ public interface IListenable {
      * @param connection for which connection must be used
      */
     void receiveNames(Connection connection);
+
+    /**
+     * Method is using to log all messages
+     * @param msg message to log
+     */
+    void log(String msg);
 }

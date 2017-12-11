@@ -1,7 +1,12 @@
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 
 /**
  * @author Pavlo Rozbytskyi
@@ -13,14 +18,31 @@ public class Server implements IListenable{
         new Server();
     }
     //all connections are in this collection
-    private ArrayList<Connection> connections = new ArrayList<>();
+    private ArrayList<Connection> connections;
     //all names are in this collection
-    private ArrayList<String> names = new ArrayList<>();
+    private ArrayList<String> names;
+    private File log;
+    private PrintWriter logMessage;
+    private SimpleDateFormat dataFormat;
+    private Date date;
 
     private Server(){
+        connections = new ArrayList<>();
+        names = new ArrayList<>();
+        dataFormat = new SimpleDateFormat("dd/MM/yy HH:mm:ss");
+        date = new Date();
+        //all stuff for logging
+        log = new File("log.txt");
+        try {
+            logMessage = new PrintWriter(new FileWriter(log, true));
+        } catch (IOException e) {
+            System.err.println("cannot create log.txt file.");
+        }
+        log("=====================================");
+        log(String.format("current date: " + dataFormat.format(date)));
         //by default is port 6666
         port = Constants.DEFAULT_PORT;
-        System.out.println("server started.");
+        log("server started.");
         while (true){
             try (ServerSocket serverSocket = new ServerSocket(port);){
                 Socket socket = serverSocket.accept();
@@ -30,30 +52,30 @@ public class Server implements IListenable{
                 }else{
                     Connection connection = new Connection(socket, this);
                     connection.sendString("refused: too_many_users");
-                    System.out.println("refused: too_many_users");
+                    log("refused: too_many_users");
                     connection.disconnect();
                 }
 
             } catch (IOException e) {
-                System.out.println("connection cannot be established.");
+                log("connection cannot be established.");
             }
         }
     }
     @Override
     public synchronized void isExcepted(Connection connection, Exception e) {
-        System.out.println(connection.toString() + " excepted: " + e);
+        log(connection.toString() + " excepted: " + e);
     }
 
     @Override
     public synchronized void receveMessage(Connection connection, String value) {
-        System.out.println(getClientName(connection) + ": " + value);
+        log(getClientName(connection) + ": " + value);
         sendOnAll(connection, getClientName(connection) + " : " + value);
     }
 
     @Override
     public synchronized void connected(Connection connection) {
         connections.add(connection);
-        System.out.println(getClientName(connection) + " connected.");
+        log(getClientName(connection) + " connected.");
         connection.sendString("tape \"help:\" to use this chat. ");
     }
     //returns names of all logged in users
@@ -73,7 +95,7 @@ public class Server implements IListenable{
     public synchronized void disconnectClient(Connection connection) {
         if(connections.contains(connection)) {
             connections.remove(connection);
-            System.out.println(getClientName(connection) + " disconnected.");
+            log(getClientName(connection) + " disconnected.");
             sendOnAll(connection, getClientName(connection) + " disconnected.");
         }
     }
@@ -92,8 +114,15 @@ public class Server implements IListenable{
             for(Connection var : connections){
                 var.sendString("namelist: " + val);
             }
-            System.out.println("namelist: " + val);
+            log("namelist: " + val);
         }
+    }
+
+    @Override
+    public void log(String msg) {
+        System.out.println(msg);
+        logMessage.write(msg + "\n");
+        logMessage.flush();
     }
 
     /**
