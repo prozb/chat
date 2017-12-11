@@ -111,7 +111,7 @@ public class Connection{
             actionListener.log("user " + socket.getInetAddress() + " is trying change his name.");
         }else{
             sendString("refused: see_how_to_use_chat");
-            actionListener.log("user " + socket.getInetAddress() + " is trying to log in.");
+            actionListener.log((!isLoggedIn() ? socket.getInetAddress() : clientName) + " wrong_command");
         }
     }
     //connection proves whether this name exists or not
