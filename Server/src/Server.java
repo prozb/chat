@@ -10,7 +10,8 @@ public class Server implements IListenable{
     }
     //all connections are in this collection
     private ArrayList<Connection> connections = new ArrayList<>();
-    private StringBuilder builder = new StringBuilder();
+    private ArrayList<String> names = new ArrayList<>();
+    //private StringBuilder builder = new StringBuilder();
 
     private Server(){
         //by default is port 6666
@@ -57,15 +58,16 @@ public class Server implements IListenable{
         //connection.sendString("please, confirm registration in form \"connect: USER_NAME\"");
     }
 
-    private String nameList(){
-        builder.setLength(0);
-        builder.append("namelist");
-        for(Connection val : connections) {
-            if(val.isRegistrated() && val.getClientName() != null) {
-                builder.append(": " + val.getClientName());
+    private ArrayList<String> nameList(){
+        names.clear();
+        String name = null;
+        for(Connection connection : connections){
+            if(connection.isRegistrated() && connection.getClientName() != null){
+                name = connection.getClientName();
+                names.add(name);
             }
         }
-        return builder.toString();
+        return names;
     }
 
     @Override
@@ -75,6 +77,11 @@ public class Server implements IListenable{
             System.out.println(getClientName(connection) + " disconnected.");
             sendOnAll(connection, getClientName(connection) + " disconnected.");
         }
+    }
+
+    @Override
+    public void receiveNames(Connection connection) {
+        connection.setNames(nameList());
     }
 
     /**
@@ -96,6 +103,18 @@ public class Server implements IListenable{
                 connection.toString();
     }
 
+    /**
+     * @param val name to check in collection
+     * @return whether or not name exists
+     */
+    private boolean nameExists(String val){
+        for(String name : names){
+            if(name == null && val.equals(name)){
+                return true;
+            }
+        }
+        return false;
+    }
     /**
      * Proves if this client can have this name
      * @param connection Current connection

@@ -28,4 +28,10 @@ public interface IListenable {
      * @param connection Connection must be broken.
      */
     void disconnectClient(Connection connection);
+
+    /**
+     * sends on the connection used names
+     * @param connection for which connection must be used
+     */
+    void receiveNames(Connection connection);
 }

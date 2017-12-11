@@ -1,5 +1,6 @@
 import java.io.*;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -19,6 +20,8 @@ public class Connection{
     private String connectPattern;
     private Pattern pattern;
     private Matcher matcher;
+    private ArrayList<String> names;
+    //private boolean isPlace;
 
     /**
      *
@@ -45,6 +48,7 @@ public class Connection{
         //this.clientName = "pidor";
         //user must be registrated to send messages
         this.registrated = false;
+        this.names = new ArrayList<>();
         //creation new thread
         //this.connectPattern = "^" + Constants.CONNECT + ;
         this.connectionThread = new Thread(new Runnable() {
@@ -83,19 +87,25 @@ public class Connection{
             if(connectedCommand(msg)){
                 System.out.println("user " + clientName + " is trying to change name.");
                 sendString("you cannot change your name. ");
-            }else {
-                if(messageCommand(msg))
-                    actionListener.receveMessage(this, msg.replaceAll("message: ", ""));
+            }else if(messageCommand(msg)){
+                actionListener.receveMessage(this, msg.replaceAll("message: ", ""));
             }
         }else {
             //if user isn't registrated and used correct command,
             //register this user
             if(!registrated && connectedCommand(msg)){
-                registrated = true;
-                sendString("connect: ok");
-                this.clientName = msg.replaceAll("connect:\\s", "");
-                //sendString("Welcome in this chat dear " + clientName);
-                actionListener.receveMessage(this, "logged in successfully!");
+                actionListener.receiveNames(this);
+                //System.out.println(names.toString());
+                if(!nameExists(msg.replaceAll("connect:\\s", ""))) {
+                    registrated = true;
+                    sendString("connect: ok");
+                    this.clientName = msg.replaceAll("connect:\\s", "");
+                    //sendString("Welcome in this chat dear " + clientName);
+                    actionListener.receveMessage(this, "logged in successfully!");
+                }else{
+                    System.out.println("user " + socket.getInetAddress() + " is trying to use choosen name.");
+                    sendString("refused: name_in_use");
+                }
             }else{
                 System.out.println("user " + socket.getInetAddress() + " is trying to register.");
                 sendString("please, confirm registration in form \"connect: USER_NAME\"");
@@ -181,5 +191,26 @@ public class Connection{
      */
     public String getClientName(){
         return clientName;
+    }
+
+    /**
+     *
+     * @param names collection with names of all users in chat
+     */
+    public void setNames(ArrayList<String> names) {
+        this.names = names;
+    }
+
+    /**
+     * @param val name to check in collection
+     * @return whether or not name exists
+     */
+    private boolean nameExists(String val){
+        for(String name : names){
+            if(name != null && val.equals(name)){
+                return true;
+            }
+        }
+        return false;
     }
 }
