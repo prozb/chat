@@ -116,6 +116,7 @@ public class Connection{
     }
     //connection proves whether this name exists or not
     private boolean nameExists(String val){
+        actionListener.receiveNames(this);
         //just take the name from message
         String valName = val.replaceAll("connect: ", "");
         for(String name : names){
