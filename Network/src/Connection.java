@@ -95,7 +95,7 @@ public class Connection{
                 sendString("connect: ok");
                 this.clientName = msg.replaceAll("connect:\\s", "");
                 //sendString("Welcome in this chat dear " + clientName);
-                actionListener.receveMessage(this, "user " + clientName + " registred successfully!");
+                actionListener.receveMessage(this, "logged in successfully!");
             }else{
                 System.out.println("user " + socket.getInetAddress() + " is trying to register.");
                 sendString("please, confirm registration in form \"connect: USER_NAME\"");
@@ -143,6 +143,11 @@ public class Connection{
      */
     public synchronized void disconnect(){
         //if disconnect, interrupt thread and close socket
+        if(!socket.isClosed()){
+            sendString("disconnect: ok");
+            //System.out.println("disconnect: ok");
+        }
+
         connectionThread.interrupt();
         actionListener.disconnectClient(this);
         try {
