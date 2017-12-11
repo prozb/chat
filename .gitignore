@@ -4,4 +4,6 @@
 .iml
 *.class
 .class
+out/*
+out/
 

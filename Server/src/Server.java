@@ -6,10 +6,11 @@ import java.util.ArrayList;
 public class Server implements IListenable{
     private int port;
     public static void main(String[] args) {
-            new Server();
+        new Server();
     }
     //all connections are in this collection
     private ArrayList<Connection> connections = new ArrayList<>();
+    private StringBuilder builder = new StringBuilder();
 
     private Server(){
         //by default is port 6666
@@ -18,7 +19,14 @@ public class Server implements IListenable{
         while (true){
             try (ServerSocket serverSocket = new ServerSocket(port);){
                 Socket socket = serverSocket.accept();
-                connected(new Connection(socket, this));
+                if(connections.size() < Constants.MAX_CLIENTS_SIZE) {
+                    connected(new Connection(socket, this));
+                }else{
+                    Connection connection = new Connection(socket, this);
+                    connection.sendString("refused: too_many_users");
+                    System.out.println("refused: too_many_users");
+                    connection.disconnect();
+                }
 
             } catch (IOException e) {
                 System.out.println("connection cannot be established.");
@@ -40,15 +48,32 @@ public class Server implements IListenable{
     public synchronized void connected(Connection connection) {
         connections.add(connection);
         System.out.println(getClientName(connection) + " connected.");
-        connection.sendString("welcome in this chat! ");
+      /*  if(connection.isRegistrated()) {
+            connection.sendString("connect: ok");
+        }*/
+        //connection.sendString("welcome in this chat! ");
+        //connection.sendString(nameList());
         connection.sendString("please, confirm registration in form \"connect: USER_NAME\"");
+    }
+
+    private String nameList(){
+        builder.setLength(0);
+        builder.append("namelist");
+        for(Connection val : connections) {
+            if(val.isRegistrated() && val.getClientName() != null) {
+                builder.append(": " + val.getClientName());
+            }
+        }
+        return builder.toString();
     }
 
     @Override
     public synchronized void disconnectClient(Connection connection) {
-        connections.remove(connection);
-        System.out.println(getClientName(connection) + " disconnected.");
-        sendOnAll(connection, getClientName(connection) + " disconnected.");
+        if(connections.contains(connection)) {
+            connections.remove(connection);
+            System.out.println(getClientName(connection) + " disconnected.");
+            sendOnAll(connection, getClientName(connection) + " disconnected.");
+        }
     }
 
     /**

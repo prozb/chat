@@ -2,4 +2,7 @@
 .idea/
 *.iml
 .iml
+*.class
+.class
+out/*
 

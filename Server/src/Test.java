@@ -1,6 +1,3 @@
-import org.sqlite.util.StringUtils;
-import sun.security.krb5.internal.PAData;
-
 import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -66,8 +63,8 @@ public class Test {
     public static boolean check(String msg){
 
         //Pattern pattern = Pattern.compile("192\\.168\\.[0-9]{1,3}\\.[2-8]{1,3}");
-        pattern = Pattern.compile("("+ Commands.CONNECT + "|" + Commands.DISCONNECT + "|"
-                                            + Commands.MESSAGE + "):[a-z]");
+        pattern = Pattern.compile("("+ Constants.CONNECT + "|" + Constants.DISCONNECT + "|"
+                                            + Constants.MESSAGE + "):[a-z]");
         Matcher m = pattern.matcher(msg);
         return m.matches();
     }

@@ -1,4 +1,4 @@
-public final class Commands {
+public final class Constants {
     public static final String DISCONNECT = "disconnect";
     public static final String MESSAGE = "message";
     public static final String CONNECT = "connect";
@@ -8,4 +8,5 @@ public final class Commands {
     public static final String NAME_IN_USE = "name_in_use";
     public static final String INVALID_NAME = "invalid_name";
     public static final String INVALID_COMMAND = "invalid_command";
+    public static final int MAX_CLIENTS_SIZE = 3;
 }

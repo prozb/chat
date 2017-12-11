@@ -46,7 +46,7 @@ public class Connection{
         //user must be registrated to send messages
         this.registrated = false;
         //creation new thread
-        //this.connectPattern = "^" + Commands.CONNECT + ;
+        //this.connectPattern = "^" + Constants.CONNECT + ;
         this.connectionThread = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -74,6 +74,7 @@ public class Connection{
     private void processInMessages(String msg){
         if(disconnectedCommand(msg))
             disconnect();
+
         if(registrated){
             if(connectedCommand(msg)){
                 System.out.println("user " + clientName + " is trying to change name.");
@@ -87,8 +88,9 @@ public class Connection{
             //register this user
             if(!registrated && connectedCommand(msg)){
                 registrated = true;
+                sendString("connect: ok");
                 this.clientName = msg.replaceAll("connect:\\s", "");
-                sendString("Welcome in this chat dear " + clientName);
+                //sendString("Welcome in this chat dear " + clientName);
                 actionListener.receveMessage(this, "user " + clientName + " registred successfully!");
             }else{
                 System.out.println("user " + socket.getInetAddress() + " is trying to register.");
