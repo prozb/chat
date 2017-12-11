@@ -3,23 +3,28 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 
+/**
+ * @author Pavlo Rozbytskyi
+ * @version 1.0.0
+ */
 public class Server implements IListenable{
     private int port;
-    public static void main(String[] args) {
+    private static void main(String[] args) {
         new Server();
     }
     //all connections are in this collection
     private ArrayList<Connection> connections = new ArrayList<>();
+    //all names are in this collection
     private ArrayList<String> names = new ArrayList<>();
-    //private StringBuilder builder = new StringBuilder();
 
     private Server(){
         //by default is port 6666
-        port = 6666;
-        System.out.println("server started...");
+        port = Constants.DEFAULT_PORT;
+        System.out.println("server started.");
         while (true){
             try (ServerSocket serverSocket = new ServerSocket(port);){
                 Socket socket = serverSocket.accept();
+                //number of connections is be restricted
                 if(connections.size() < Constants.MAX_CLIENTS_SIZE) {
                     connected(new Connection(socket, this));
                 }else{
@@ -49,15 +54,9 @@ public class Server implements IListenable{
     public synchronized void connected(Connection connection) {
         connections.add(connection);
         System.out.println(getClientName(connection) + " connected.");
-      /*  if(connection.isLoggedIn()) {
-            connection.sendString("connect: ok");
-        }*/
-        //connection.sendString("welcome in this chat! ");
-        //connection.sendString(nameList());
         connection.sendString("tape \"help:\" to use this chat. ");
-        //connection.sendString("please, confirm registration in form \"connect: USER_NAME\"");
     }
-
+    //returns names of all logged in users
     private ArrayList<String> nameList(){
         names.clear();
         String name = null;
@@ -84,11 +83,12 @@ public class Server implements IListenable{
         connection.setNames(nameList());
         //send names on all users
         if(connection.isLoggedIn() && names.toString() != null){
+            //making namelist: [NAME]: {NAME} with simple manipulations
             String val = names.toString();
             val = val.replaceAll(",",":");
             val = val.replaceAll("\\[","");
             val = val.replaceAll("]","");
-
+            //send names on all clients
             for(Connection var : connections){
                 var.sendString("namelist: " + val);
             }
@@ -110,35 +110,12 @@ public class Server implements IListenable{
         }
     }
 
+    /**
+     * @param connection
+     * @return client name if client is logged in, otherwise return ip address
+     */
     public String getClientName(Connection connection){
         return connection.getClientName() != null ? connection.getClientName() :
                 connection.toString();
     }
-
-    /**
-     * @param val name to check in collection
-     * @return whether or not name exists
-     */
-    private boolean nameExists(String val){
-        for(String name : names){
-            if(name == null && val.equals(name)){
-                return true;
-            }
-        }
-        return false;
-    }
-    /**
-     * Proves if this client can have this name
-     * @param connection Current connection
-     * @param name Name to check, whether or not exists.
-     * @return exist or no
-     */
-/*    public boolean checkName(Connection connection, String name){
-        boolean exists = false;
-        for(Connection var : connections){
-            if(var.getClientName().equals(name))
-                exists = true;
-        }
-        return exists;
-    }*/
 }

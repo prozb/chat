@@ -9,4 +9,5 @@ public final class Constants {
     public static final String INVALID_NAME = "invalid_name";
     public static final String INVALID_COMMAND = "invalid_command";
     public static final int MAX_CLIENTS_SIZE = 3;
+    public static final int DEFAULT_PORT = 6666;
 }
