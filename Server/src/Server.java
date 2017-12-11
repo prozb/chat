@@ -9,7 +9,7 @@ import java.util.ArrayList;
  */
 public class Server implements IListenable{
     private int port;
-    private static void main(String[] args) {
+    public static void main(String[] args) {
         new Server();
     }
     //all connections are in this collection
