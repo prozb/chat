@@ -112,7 +112,9 @@ public class Server implements IListenable{
             val = val.replaceAll("]","");
             //send names on all clients
             for(Connection var : connections){
-                var.sendString("namelist: " + val);
+                if(var.getClientName() != null) {
+                    var.sendString("namelist: " + val);
+                }
             }
             log("namelist: " + val);
         }

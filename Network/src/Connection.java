@@ -10,7 +10,7 @@ import java.util.regex.Pattern;
  * @author Pavlo Rozbytskyi
  * @version 1.0.0
  */
-public class Connection{
+class Connection{
 
     private Socket socket;
     private Thread connectionThread;
@@ -66,6 +66,8 @@ public class Connection{
                         //if cannot receive message, disconnect and handle exception
                         actionListener.isExcepted(Connection.this, e);
                         disconnect();
+                    } catch (Exception e) {
+                        System.out.println("disconnected:");
                     }
                 }
             }
@@ -75,7 +77,7 @@ public class Connection{
     }
 
     //method processes all messages from clients
-    private void processInMessages(String msg){
+    private void processInMessages(String msg) throws Exception{
         //help command processing
         if(helpCommand(msg)){
             sendString("tape \"connect: [NAME]\" to log in.\n\rtape \"disconnect: \" to disconnect\n\r" +
