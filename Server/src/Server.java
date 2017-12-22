@@ -140,7 +140,7 @@ public class Server implements IListenable{
             }
         }
     }
-
+    //=============================GETTERS & SETTERS======================================
     /**
      * @param connection
      * @return client name if client is logged in, otherwise return ip address
@@ -149,4 +149,5 @@ public class Server implements IListenable{
         return connection.getClientName() != null ? connection.getClientName() :
                 connection.toString();
     }
+    //=============================GETTERS & SETTERS======================================
 }

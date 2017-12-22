@@ -19,6 +19,7 @@ class Connection{
     private IListenable actionListener;
     private String clientName;
     private boolean loggedIn;
+    private boolean disconnectedFlag;
     private Pattern pattern;
     private Matcher matcher;
     private ArrayList<String> names;
@@ -47,6 +48,9 @@ class Connection{
         this.out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
         //user must be loggedIn to send messages
         this.loggedIn = false;
+        //you need this stuff to avoid stack overflow when client
+        //makes hard disconnect (closes terminal)
+        this.disconnectedFlag = false;
         //in this list are there all clients names
         this.names = new ArrayList<>();
         //creation new thread
@@ -162,11 +166,15 @@ class Connection{
      */
     public void sendString(String msg){
         try {
-            //write msg in buffer
-            out.write(msg+ "\r\n");
-            //make buffer empty and send string
-            out.flush();
-        } catch (IOException e) {
+            if(!socket.isClosed() && !socket.isInputShutdown() && !socket.isOutputShutdown()) {
+                //write msg in buffer
+                out.write(msg + "\r\n");
+                //make buffer empty and send string
+                out.flush();
+            }else {
+                disconnect();
+            }
+        } catch (Exception e) {
             //in cannot be sent, disconnect and handle exception
             disconnect();
             actionListener.isExcepted(this, e);
@@ -178,7 +186,12 @@ class Connection{
     public void disconnect(){
         //if socket isn't closed, send message disconnect
         //otherwise Stack overflow exception
-        if(!socket.isClosed()){
+
+        //flag to avoid stack overflow
+        //if user just closes terminal disconnect method cannot
+        //figure out, that socket is closed, even if you use socket.isClosed()
+        disconnectedFlag = true;
+        if(!socket.isClosed() && !disconnectedFlag){
             sendString("disconnect: ok");
         }
         //interrupt thread and stop connection
@@ -186,13 +199,12 @@ class Connection{
         actionListener.disconnectClient(this);
         try {
             socket.close();
-        } catch (IOException e) {
+        } catch (Exception e) {
             //send problem on listener
             actionListener.isExcepted(this, e);
             actionListener.receveMessage(this, toString() + " disconnectedCommand.");
         }
     }
-
     //=====================GETTERS & SETTERS=========================
     /**
      * @return ip address of the client
@@ -222,5 +234,14 @@ class Connection{
     public void setNames(ArrayList<String> names) {
         this.names = names;
     }
+
+    /**
+     * Socket getter
+     * @return returns socket for this connection
+     */
+    public Socket getSocket() {
+        return socket;
+    }
+
     //=====================GETTERS & SETTERS=========================
 }
