@@ -1,4 +1,105 @@
-package PACKAGE_NAME;
+import javafx.application.Application;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.TextArea;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
+import javafx.stage.Stage;
 
-public class ServerGUI {
+public class ServerGui extends Application implements IInterconnectable {
+    private Stage primaryStage;
+    private Scene scene;
+    private VBox layout;
+    private TextArea textArea;
+    private Button startButton;
+    private Button stopButton;
+    private Button clearButton;
+    private Thread serverThread;
+    private boolean serverStarted;
+    private boolean stopServer;
+
+    @Override
+    public void init() throws Exception {
+        this.serverStarted = false;
+        this.startButton = new Button("Start");
+        this.clearButton = new Button("Clear");
+        this.clearButton.setPrefWidth(130);
+        this.startButton.setPrefWidth(130);
+        this.clearButton.setOnAction(e -> {
+            textArea.clear();
+        });
+        this.startButton.setOnAction(e -> {
+            if(!serverStarted) {
+                this.serverThread = new Thread(new Server(ServerGui.this));
+                this.serverThread.setDaemon(true);
+                this.serverThread.start();
+                this.stopServer = false;
+                serverStarted = true;
+            }else {
+                sendTextToGui("Server has been already started!");
+            }
+        });
+        this.stopButton = new Button("Stop");
+        this.stopButton.setOnAction(e -> {
+            this.stopServer = false;
+            if(!serverStarted){
+                sendTextToGui("Server isn't started!");
+            }else{
+                this.sendTextToGui("must be stopped piu piu");
+                this.stopServer = true;
+                //this.message = "hello";
+                serverThread.stop();
+
+            }
+        });
+        this.stopButton.setPrefWidth(130);
+
+        this.textArea = new TextArea();
+        this.textArea.setEditable(false);
+        this.textArea.setWrapText(true);
+        this.textArea.setScrollTop(10);
+        this.textArea.setPrefHeight(230);
+
+        this.layout = new VBox();
+        this.layout.setAlignment(Pos.CENTER);
+        this.layout.setPadding(new Insets(10,25,25,25));
+        scene = new Scene(layout, 500, 300, Color.BLACK);
+
+        HBox hBox1 = new HBox();
+        hBox1.setPadding(new Insets(10,0,25,0));
+        hBox1.getChildren().add(textArea);
+        HBox hBox2 = new HBox();
+        hBox2.getChildren().addAll(startButton, stopButton, clearButton);
+        hBox2.setSpacing(70);
+        this.layout.getChildren().addAll(hBox1, hBox2);
+
+        super.init();
+    }
+
+    @Override
+    public void start(Stage primaryStage) throws Exception {
+        this.primaryStage = primaryStage;
+        primaryStage.setResizable(false);
+        primaryStage.setTitle("Server");
+
+        this.primaryStage.setScene(scene);
+        this.primaryStage.show();
+    }
+
+    @Override
+    public void sendTextToGui(String text){
+        textArea.appendText(text + "\n");
+    }
+
+/*    @Override
+    public String sendMessage(){
+        return message;
+    }*/
+    @Override
+    public boolean isStopped(){
+        return this.stopServer;
+    }
 }

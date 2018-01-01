@@ -7,16 +7,13 @@ import java.net.Socket;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-
+//TODO: This Thread is daemon. Make sure killing this daemon is working properly
 /**
  * @author Pavlo Rozbytskyi
  * @version 1.0.0
  */
-public class Server implements IListenable{
+public class Server implements IListenable, Runnable{
     private int port;
-    public static void main(String[] args) {
-        new Server();
-    }
     //all connections are in this collection
     private ArrayList<Connection> connections;
     //all names are in this collection
@@ -25,8 +22,12 @@ public class Server implements IListenable{
     private PrintWriter logMessage;
     private SimpleDateFormat dataFormat;
     private Date date;
+    private IInterconnectable gui;
+    private boolean stoped;
 
-    private Server(){
+    public Server(IInterconnectable gui){
+        this.stoped = false;
+        this.gui = gui;
         connections = new ArrayList<>();
         names = new ArrayList<>();
         dataFormat = new SimpleDateFormat("dd/MM/yy HH:mm:ss");
@@ -43,23 +44,6 @@ public class Server implements IListenable{
         //by default is port 6666
         port = Constants.DEFAULT_PORT;
         log("server started.");
-        while (true){
-            try (ServerSocket serverSocket = new ServerSocket(port);){
-                Socket socket = serverSocket.accept();
-                //number of connections is be restricted
-                if(connections.size() < Constants.MAX_CLIENTS_SIZE) {
-                    connected(new Connection(socket, this));
-                }else{
-                    Connection connection = new Connection(socket, this);
-                    connection.sendString("refused: too_many_users");
-                    log("refused: too_many_users");
-                    connection.disconnect();
-                }
-
-            } catch (IOException e) {
-                log("connection cannot be established.");
-            }
-        }
     }
     @Override
     public synchronized void isExcepted(Connection connection, Exception e) {
@@ -125,6 +109,8 @@ public class Server implements IListenable{
         System.out.println(msg);
         logMessage.write(msg + "\n");
         logMessage.flush();
+        gui.sendTextToGui(msg);
+
     }
 
     /**
@@ -150,4 +136,27 @@ public class Server implements IListenable{
                 connection.toString();
     }
     //=============================GETTERS & SETTERS======================================
+
+    @Override
+    public void run() {
+        while (!stoped){
+            stoped = gui.isStopped();
+            try (ServerSocket serverSocket = new ServerSocket(port)){
+                Socket socket = serverSocket.accept();
+                //number of connections is be restricted
+                if(connections.size() < Constants.MAX_CLIENTS_SIZE) {
+                    connected(new Connection(socket, this));
+                }else{
+                    Connection connection = new Connection(socket, this);
+                    connection.sendString("refused: too_many_users");
+                    log("refused: too_many_users");
+                    connection.disconnect();
+                }
+
+            } catch (IOException e) {
+                log("connection cannot be established.");
+            }
+        }
+        log(String.format( "server stopped at: " + dataFormat.format(date)));
+    }
 }
