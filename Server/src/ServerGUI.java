@@ -17,9 +17,8 @@ public class ServerGui extends Application implements IInterconnectable {
     private Button startButton;
     private Button stopButton;
     private Button clearButton;
-    private Thread serverThread;
+    private Server server;
     private boolean serverStarted;
-    private boolean stopServer;
 
     @Override
     public void init() throws Exception {
@@ -33,26 +32,20 @@ public class ServerGui extends Application implements IInterconnectable {
         });
         this.startButton.setOnAction(e -> {
             if(!serverStarted) {
-                this.serverThread = new Thread(new Server(ServerGui.this));
-                this.serverThread.setDaemon(true);
-                this.serverThread.start();
-                this.stopServer = false;
+                this.server= new Server(ServerGui.this);
                 serverStarted = true;
             }else {
-                sendTextToGui("Server has been already started!");
+               sendTextToGui("Server has been already started!");
             }
         });
         this.stopButton = new Button("Stop");
         this.stopButton.setOnAction(e -> {
-            this.stopServer = false;
             if(!serverStarted){
                 sendTextToGui("Server isn't started!");
             }else{
-                this.sendTextToGui("must be stopped piu piu");
-                this.stopServer = true;
-                //this.message = "hello";
-                serverThread.stop();
-
+                server.finish();
+                this.server = null;
+                serverStarted = false;
             }
         });
         this.stopButton.setPrefWidth(130);
@@ -92,14 +85,5 @@ public class ServerGui extends Application implements IInterconnectable {
     @Override
     public void sendTextToGui(String text){
         textArea.appendText(text + "\n");
-    }
-
-/*    @Override
-    public String sendMessage(){
-        return message;
-    }*/
-    @Override
-    public boolean isStopped(){
-        return this.stopServer;
     }
 }

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -12,7 +13,7 @@ import java.util.Date;
  * @author Pavlo Rozbytskyi
  * @version 1.0.0
  */
-public class Server implements IListenable, Runnable{
+public class Server implements IListenable{
     private int port;
     //all connections are in this collection
     private ArrayList<Connection> connections;
@@ -23,10 +24,14 @@ public class Server implements IListenable, Runnable{
     private SimpleDateFormat dataFormat;
     private Date date;
     private IInterconnectable gui;
-    private boolean stoped;
+    private ServerSocket serverSocket;
+    private boolean isRunning;
+    //private volatile boolean isRunning;
+    private Thread serverThread;
+
 
     public Server(IInterconnectable gui){
-        this.stoped = false;
+        this.isRunning = true;
         this.gui = gui;
         connections = new ArrayList<>();
         names = new ArrayList<>();
@@ -44,6 +49,42 @@ public class Server implements IListenable, Runnable{
         //by default is port 6666
         port = Constants.DEFAULT_PORT;
         log("server started.");
+
+        this.serverThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (!Thread.currentThread().isInterrupted()) {
+                    System.out.println("running");
+                    try {
+                        serverSocket = new ServerSocket(port);
+                        serverSocket.setSoTimeout(1000);
+                    } catch (IOException e) {
+                    }
+
+                    try{
+                        Socket socket = serverSocket.accept();
+                        //number of connections must be restricted
+                        if (connections.size() < Constants.MAX_CLIENTS_SIZE) {
+                            connected(new Connection(socket, Server.this));
+                        } else {
+                            Connection connection = new Connection(socket, Server.this);
+                            connection.sendString("refused: too_many_users");
+                            log("refused: too_many_users");
+                            connection.disconnect();
+                        }
+                    } catch (IOException e) {
+                        //log("connection cannot be established.");
+                    }
+
+                }
+                System.out.println("server stop");
+                //disconnectAllClients();
+                sendOnAll(null, "disconnect:");
+                //disconnectClient(connections.get(0));
+                log(String.format("server stopped at: " + dataFormat.format(date)));
+            }
+        });
+        serverThread.start();
     }
     @Override
     public synchronized void isExcepted(Connection connection, Exception e) {
@@ -78,6 +119,7 @@ public class Server implements IListenable, Runnable{
     @Override
     public synchronized void disconnectClient(Connection connection) {
         if(connections.contains(connection)) {
+            connection.interruptConnection();
             connections.remove(connection);
             log(getClientName(connection) + " disconnected.");
             sendOnAll(connection, getClientName(connection) + " disconnected.");
@@ -89,7 +131,7 @@ public class Server implements IListenable, Runnable{
         connection.setNames(nameList());
         //send names on all users
         if(connection.isLoggedIn() && names.toString() != null){
-            //making namelist: [NAME]: {NAME} with simple manipulations
+            //making name list: [NAME]: {NAME} with simple manipulations
             String val = names.toString();
             val = val.replaceAll(",",":");
             val = val.replaceAll("\\[","");
@@ -97,10 +139,10 @@ public class Server implements IListenable, Runnable{
             //send names on all clients
             for(Connection var : connections){
                 if(var.getClientName() != null) {
-                    var.sendString("namelist: " + val);
+                    var.sendString("name list: " + val);
                 }
             }
-            log("namelist: " + val);
+            log("name list: " + val);
         }
     }
 
@@ -110,7 +152,6 @@ public class Server implements IListenable, Runnable{
         logMessage.write(msg + "\n");
         logMessage.flush();
         gui.sendTextToGui(msg);
-
     }
 
     /**
@@ -136,27 +177,17 @@ public class Server implements IListenable, Runnable{
                 connection.toString();
     }
     //=============================GETTERS & SETTERS======================================
-
-    @Override
-    public void run() {
-        while (!stoped){
-            stoped = gui.isStopped();
-            try (ServerSocket serverSocket = new ServerSocket(port)){
-                Socket socket = serverSocket.accept();
-                //number of connections is be restricted
-                if(connections.size() < Constants.MAX_CLIENTS_SIZE) {
-                    connected(new Connection(socket, this));
-                }else{
-                    Connection connection = new Connection(socket, this);
-                    connection.sendString("refused: too_many_users");
-                    log("refused: too_many_users");
-                    connection.disconnect();
-                }
-
-            } catch (IOException e) {
-                log("connection cannot be established.");
-            }
+    public void disconnectAllClients(){
+        System.out.println("disconnecting all clients");
+        for(Connection connection : connections){
+            disconnectClient(connection);
         }
-        log(String.format( "server stopped at: " + dataFormat.format(date)));
+    }
+
+    public void finish(){
+        this.serverThread.interrupt();
+        System.out.println("finished");
+        sendOnAll(null,"disconnect:");
+        this.serverSocket = null;
     }
 }

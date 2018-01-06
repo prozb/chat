@@ -54,6 +54,7 @@ class Connection{
         //in this list are there all clients names
         this.names = new ArrayList<>();
         //creation new thread
+        //this.connectionThread.setDaemon(true);
         this.connectionThread = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -76,6 +77,7 @@ class Connection{
                 }
             }
         });
+        connectionThread.setDaemon(true);
         //starting new thread
         connectionThread.start();
     }
@@ -206,6 +208,9 @@ class Connection{
         }
     }
     //=====================GETTERS & SETTERS=========================
+    public void interruptConnection(){
+        connectionThread.interrupt();
+    }
     /**
      * @return ip address of the client
      */
