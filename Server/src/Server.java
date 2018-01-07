@@ -55,7 +55,7 @@ public class Server implements IListenable{
             @Override
             public void run() {
                 while (!Thread.currentThread().isInterrupted()) {
-                    System.out.println("running");
+                    //System.out.println("running");
                     try {
                         serverSocket = new ServerSocket(port);
                         serverSocket.setSoTimeout(1000);
@@ -84,6 +84,7 @@ public class Server implements IListenable{
                 disconnectAllClients();
                 //disconnectClient(connections.get(0));
                 log(String.format("server stopped at: " + dataFormat.format(date)));
+                log("===========================================");
             }
         });
         serverThread.start();
@@ -194,8 +195,5 @@ public class Server implements IListenable{
         this.serverThread.interrupt();
         System.out.println("finished");
         sendOnAll(null,"disconnect:");
-        this.serverSocket = null;
-        this.serverThread = null;
-        this.gui = null;
     }
 }

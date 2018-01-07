@@ -44,7 +44,7 @@ public class ServerGui extends Application implements IInterconnectable {
                 sendTextToGui("Server isn't started!");
             }else{
                 server.finish();
-                this.server = null;
+                //this.server = null;
                 serverStarted = false;
             }
         });
