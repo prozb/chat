@@ -199,12 +199,31 @@ class Connection{
         //interrupt thread and stop connection
         connectionThread.interrupt();
         actionListener.disconnectClient(this);
+        closeSocket();
+    }
+
+    public void disconnectServerSide(){
+        //if socket isn't closed, send message disconnect
+        //otherwise Stack overflow exception
+
+        //flag to avoid stack overflow
+        //if user just closes terminal disconnect method cannot
+        //figure out, that socket is closed, even if you use socket.isClosed()
+        disconnectedFlag = true;
+        if(!socket.isClosed() && !disconnectedFlag){
+            sendString("disconnect: ok");
+        }
+        //interrupt thread and stop connection
+        connectionThread.interrupt();
+        closeSocket();
+    }
+
+    private void closeSocket(){
         try {
             socket.close();
         } catch (Exception e) {
             //send problem on listener
             actionListener.isExcepted(this, e);
-            actionListener.receveMessage(this, toString() + " disconnectedCommand.");
         }
     }
     //=====================GETTERS & SETTERS=========================

@@ -8,6 +8,7 @@ import java.net.SocketException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Iterator;
 //TODO: This Thread is daemon. Make sure killing this daemon is working properly
 /**
  * @author Pavlo Rozbytskyi
@@ -59,6 +60,7 @@ public class Server implements IListenable{
                         serverSocket = new ServerSocket(port);
                         serverSocket.setSoTimeout(1000);
                     } catch (IOException e) {
+                        //Do nothing
                     }
 
                     try{
@@ -78,8 +80,8 @@ public class Server implements IListenable{
 
                 }
                 System.out.println("server stop");
-                //disconnectAllClients();
                 sendOnAll(null, "disconnect:");
+                disconnectAllClients();
                 //disconnectClient(connections.get(0));
                 log(String.format("server stopped at: " + dataFormat.format(date)));
             }
@@ -119,7 +121,8 @@ public class Server implements IListenable{
     @Override
     public synchronized void disconnectClient(Connection connection) {
         if(connections.contains(connection)) {
-            connection.interruptConnection();
+            //connection.interruptConnection();
+            //connection.disconnect();
             connections.remove(connection);
             log(getClientName(connection) + " disconnected.");
             sendOnAll(connection, getClientName(connection) + " disconnected.");
@@ -179,8 +182,11 @@ public class Server implements IListenable{
     //=============================GETTERS & SETTERS======================================
     public void disconnectAllClients(){
         System.out.println("disconnecting all clients");
-        for(Connection connection : connections){
-            disconnectClient(connection);
+
+        for(int i = connections.size() - 1; i >= 0; i--){
+            log(getClientName(connections.get(i)) + " disconnected.");
+            connections.get(i).disconnectServerSide();
+            connections.remove(i);
         }
     }
 
@@ -189,5 +195,7 @@ public class Server implements IListenable{
         System.out.println("finished");
         sendOnAll(null,"disconnect:");
         this.serverSocket = null;
+        this.serverThread = null;
+        this.gui = null;
     }
 }
