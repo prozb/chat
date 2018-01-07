@@ -9,6 +9,8 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 
+import java.net.ServerSocket;
+
 public class ServerGui extends Application implements IInterconnectable {
     private Stage primaryStage;
     private Scene scene;
@@ -19,9 +21,11 @@ public class ServerGui extends Application implements IInterconnectable {
     private Button clearButton;
     private Server server;
     private boolean serverStarted;
+    private ServerSocket serverSocket;
 
     @Override
     public void init() throws Exception {
+        this.serverSocket = new ServerSocket(Constants.DEFAULT_PORT);
         this.serverStarted = false;
         this.startButton = new Button("Start");
         this.clearButton = new Button("Clear");
@@ -32,10 +36,11 @@ public class ServerGui extends Application implements IInterconnectable {
         });
         this.startButton.setOnAction(e -> {
             if(!serverStarted) {
-                this.server= new Server(ServerGui.this);
-                serverStarted = true;
+                this.server = null;
+                this.server = new Server(ServerGui.this);
+                this.serverStarted = true;
             }else {
-               sendTextToGui("Server has been already started!");
+                sendTextToGui("Server has been already started!");
             }
         });
         this.stopButton = new Button("Stop");
@@ -86,4 +91,11 @@ public class ServerGui extends Application implements IInterconnectable {
     public void sendTextToGui(String text){
         textArea.appendText(text + "\n");
     }
+
+    @Override
+    public ServerSocket getSocket() {
+        return serverSocket;
+    }
+
+
 }

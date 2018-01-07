@@ -15,7 +15,7 @@ public interface IListenable {
      * @param connection Connection or client, who sent message
      * @param value Message sent from client
      */
-    void receveMessage(Connection connection, String value);
+    void receiveMessage(Connection connection, String value);
 
     /**
      * Method adds connection.

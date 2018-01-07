@@ -95,7 +95,7 @@ class Connection{
         }else
         //message command processing
         if(messageCommand(msg) && isLoggedIn()){
-            actionListener.receveMessage(this, msg.replaceAll("message: ", ""));
+            actionListener.receiveMessage(this, msg.replaceAll("message: ", ""));
         }else
         //receive names from server
         //actionListener.receiveNames(this);
@@ -105,7 +105,7 @@ class Connection{
             sendString("connect: ok");
             this.clientName = msg.replaceAll("connect:\\s", "");
             //sendString("Welcome in this chat dear " + clientName);
-            actionListener.receveMessage(this, "logged in successfully!");
+            actionListener.receiveMessage(this, "logged in successfully!");
             //be using method receiveNames, sends the server numbers on all connections
             actionListener.receiveNames(this);
         }else if(!isLoggedIn() && connectedCommand(msg) && correctName(msg) && nameExists(msg)){
@@ -223,7 +223,7 @@ class Connection{
             socket.close();
         } catch (Exception e) {
             //send problem on listener
-            actionListener.isExcepted(this, e);
+            actionListener.log("socket closed.");
         }
     }
     //=====================GETTERS & SETTERS=========================

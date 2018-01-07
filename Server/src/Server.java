@@ -4,11 +4,9 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Iterator;
 //TODO: This Thread is daemon. Make sure killing this daemon is working properly
 /**
  * @author Pavlo Rozbytskyi
@@ -34,18 +32,19 @@ public class Server implements IListenable{
     public Server(IInterconnectable gui){
         this.isRunning = true;
         this.gui = gui;
-        connections = new ArrayList<>();
-        names = new ArrayList<>();
-        dataFormat = new SimpleDateFormat("dd/MM/yy HH:mm:ss");
-        date = new Date();
+        this.connections = new ArrayList<>();
+        this.names = new ArrayList<>();
+        this.dataFormat = new SimpleDateFormat("dd/MM/yy HH:mm:ss");
+        this.date = new Date();
         //all stuff for logging
-        log = new File("log.txt");
+        this.log = new File("log.txt");
+        this.serverSocket = gui.getSocket();
         try {
             logMessage = new PrintWriter(new FileWriter(log, true));
         } catch (IOException e) {
             System.err.println("cannot create log.txt file.");
         }
-        log("=====================================");
+        log("==============================================");
         log(String.format("current date: " + dataFormat.format(date)));
         //by default is port 6666
         port = Constants.DEFAULT_PORT;
@@ -57,12 +56,11 @@ public class Server implements IListenable{
                 while (!Thread.currentThread().isInterrupted()) {
                     //System.out.println("running");
                     try {
-                        serverSocket = new ServerSocket(port);
+                        /*serverSocket = new ServerSocket(port);*/
                         serverSocket.setSoTimeout(1000);
                     } catch (IOException e) {
                         //Do nothing
                     }
-
                     try{
                         Socket socket = serverSocket.accept();
                         //number of connections must be restricted
@@ -84,7 +82,7 @@ public class Server implements IListenable{
                 disconnectAllClients();
                 //disconnectClient(connections.get(0));
                 log(String.format("server stopped at: " + dataFormat.format(date)));
-                log("===========================================");
+                log("==============================================");
             }
         });
         serverThread.start();
@@ -95,7 +93,7 @@ public class Server implements IListenable{
     }
 
     @Override
-    public synchronized void receveMessage(Connection connection, String value) {
+    public synchronized void receiveMessage(Connection connection, String value) {
         log(getClientName(connection) + ": " + value);
         sendOnAll(connection, getClientName(connection) + " : " + value);
     }
@@ -124,6 +122,7 @@ public class Server implements IListenable{
         if(connections.contains(connection)) {
             //connection.interruptConnection();
             //connection.disconnect();
+            names.remove(connection.getClientName());
             connections.remove(connection);
             log(getClientName(connection) + " disconnected.");
             sendOnAll(connection, getClientName(connection) + " disconnected.");
@@ -186,6 +185,7 @@ public class Server implements IListenable{
 
         for(int i = connections.size() - 1; i >= 0; i--){
             log(getClientName(connections.get(i)) + " disconnected.");
+            names.remove(connections.get(i).getClientName());
             connections.get(i).disconnectServerSide();
             connections.remove(i);
         }
