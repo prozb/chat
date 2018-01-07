@@ -49,7 +49,6 @@ public class ServerGui extends Application implements IInterconnectable {
                 sendTextToGui("Server isn't started!");
             }else{
                 server.finish();
-                //this.server = null;
                 serverStarted = false;
             }
         });
@@ -96,6 +95,4 @@ public class ServerGui extends Application implements IInterconnectable {
     public ServerSocket getSocket() {
         return serverSocket;
     }
-
-
 }
