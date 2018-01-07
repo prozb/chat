@@ -54,7 +54,6 @@ class Connection{
         //in this list are there all clients names
         this.names = new ArrayList<>();
         //creation new thread
-        //this.connectionThread.setDaemon(true);
         this.connectionThread = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -97,8 +96,6 @@ class Connection{
         if(messageCommand(msg) && isLoggedIn()){
             actionListener.receiveMessage(this, msg.replaceAll("message: ", ""));
         }else
-        //receive names from server
-        //actionListener.receiveNames(this);
         //don't touch this stuff
         if(connectedCommand(msg) && !isLoggedIn() && correctName(msg) && !nameExists(msg)){
             loggedIn = true;
@@ -202,6 +199,9 @@ class Connection{
         closeSocket();
     }
 
+    /**
+     * Method disconnects client from server side
+     */
     public void disconnectServerSide(){
         //if socket isn't closed, send message disconnect
         //otherwise Stack overflow exception
@@ -218,6 +218,9 @@ class Connection{
         closeSocket();
     }
 
+    /**
+     * Method closes connection socket
+     */
     private void closeSocket(){
         try {
             socket.close();

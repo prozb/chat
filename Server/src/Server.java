@@ -18,25 +18,21 @@ public class Server implements IListenable{
     private ArrayList<Connection> connections;
     //all names are in this collection
     private ArrayList<String> names;
+    //file to save logs in
     private File log;
     private PrintWriter logMessage;
     private SimpleDateFormat dataFormat;
     private Date date;
     private IInterconnectable gui;
     private ServerSocket serverSocket;
-    private boolean isRunning;
-    //private volatile boolean isRunning;
     private Thread serverThread;
 
-
     public Server(IInterconnectable gui){
-        this.isRunning = true;
         this.gui = gui;
         this.connections = new ArrayList<>();
         this.names = new ArrayList<>();
         this.dataFormat = new SimpleDateFormat("dd/MM/yy HH:mm:ss");
         this.date = new Date();
-        //all stuff for logging
         this.log = new File("log.txt");
         this.serverSocket = gui.getSocket();
         try {
@@ -46,17 +42,13 @@ public class Server implements IListenable{
         }
         log("==============================================");
         log(String.format("current date: " + dataFormat.format(date)));
-        //by default is port 6666
-        port = Constants.DEFAULT_PORT;
         log("server started.");
 
         this.serverThread = new Thread(new Runnable() {
             @Override
             public void run() {
                 while (!Thread.currentThread().isInterrupted()) {
-                    //System.out.println("running");
                     try {
-                        /*serverSocket = new ServerSocket(port);*/
                         serverSocket.setSoTimeout(1000);
                     } catch (IOException e) {
                         //Do nothing
@@ -73,14 +65,12 @@ public class Server implements IListenable{
                             connection.disconnect();
                         }
                     } catch (IOException e) {
-                        //log("connection cannot be established.");
                     }
 
                 }
                 System.out.println("server stop");
                 sendOnAll(null, "disconnect:");
                 disconnectAllClients();
-                //disconnectClient(connections.get(0));
                 log(String.format("server stopped at: " + dataFormat.format(date)));
                 log("==============================================");
             }
@@ -107,7 +97,7 @@ public class Server implements IListenable{
     //returns names of all logged in users
     private ArrayList<String> nameList(){
         names.clear();
-        String name = null;
+        String name;
         for(Connection connection : connections){
             if(connection.isLoggedIn() && connection.getClientName() != null){
                 name = connection.getClientName();
@@ -130,7 +120,7 @@ public class Server implements IListenable{
     }
 
     @Override
-    public void receiveNames(Connection connection) {
+    public synchronized void receiveNames(Connection connection) {
         connection.setNames(nameList());
         //send names on all users
         if(connection.isLoggedIn() && names.toString() != null){
@@ -150,7 +140,7 @@ public class Server implements IListenable{
     }
 
     @Override
-    public void log(String msg) {
+    public synchronized void log(String msg) {
         System.out.println(msg);
         logMessage.write(msg + "\n");
         logMessage.flush();
@@ -180,6 +170,10 @@ public class Server implements IListenable{
                 connection.toString();
     }
     //=============================GETTERS & SETTERS======================================
+
+    /**
+     * Method disconnects all clients and removes names of clients from the names collection
+     */
     public void disconnectAllClients(){
         System.out.println("disconnecting all clients");
 
@@ -190,10 +184,11 @@ public class Server implements IListenable{
             connections.remove(i);
         }
     }
-
+    /**
+     * Method finishes server thread
+     */
     public void finish(){
         this.serverThread.interrupt();
-        System.out.println("finished");
         sendOnAll(null,"disconnect:");
     }
 }
