@@ -1,4 +1,3 @@
-import java.io.*;
 import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -8,7 +7,7 @@ public class Test {
     public static Pattern pattern;
     public static Matcher matcher;
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
       /*  System.out.println(emailCheck("rozbich15@gmail.com"));
         System.out.println(emailCheck("12@gmail.com"));
         System.out.println(emailCheck("1111111@gmail.com"));
@@ -24,7 +23,7 @@ public class Test {
         System.out.println(someDist("\n\r"));*/
 
         //System.out.println(someDist("BACON asdjafspj"));
-       /* String key = "";
+        String key = "";
 
         while (!key.equals("exit")){
             String name = in.nextLine();
@@ -34,14 +33,7 @@ public class Test {
             }else{
                 System.out.println("wrong name");
             }
-        }*/
-        FileWriter logIn = null;
-        File log = new File("log.txt");
-        PrintWriter out = new PrintWriter(new FileWriter(log, true));
-        for(int i = 0; i < 10; i++){
-            out.print(i);
         }
-        out.flush();
     }
     public static boolean connect(String val){
         pattern = Pattern.compile("^connect: [a-zA-Z0-9]{3,30}");

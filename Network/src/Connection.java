@@ -1,16 +1,13 @@
 import java.io.*;
 import java.net.Socket;
-import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
  * Class Connection describes connection of each client independent
  * of each other in separate thread.
- * @author Pavlo Rozbytskyi
- * @version 1.0.0
  */
-class Connection{
+public class Connection{
 
     private Socket socket;
     private Thread connectionThread;
@@ -18,11 +15,10 @@ class Connection{
     private BufferedReader in;
     private IListenable actionListener;
     private String clientName;
-    private boolean loggedIn;
-    private boolean disconnectedFlag;
+    private boolean registrated;
+    private String connectPattern;
     private Pattern pattern;
     private Matcher matcher;
-    private ArrayList<String> names;
 
     /**
      *
@@ -46,14 +42,11 @@ class Connection{
         //create streams to handle with data
         this.in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         this.out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
-        //user must be loggedIn to send messages
-        this.loggedIn = false;
-        //you need this stuff to avoid stack overflow when client
-        //makes hard disconnect (closes terminal)
-        this.disconnectedFlag = false;
-        //in this list are there all clients names
-        this.names = new ArrayList<>();
+        //this.clientName = "pidor";
+        //user must be registrated to send messages
+        this.registrated = false;
         //creation new thread
+        //this.connectPattern = "^" + Constants.CONNECT + ;
         this.connectionThread = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -70,73 +63,44 @@ class Connection{
                         //if cannot receive message, disconnect and handle exception
                         actionListener.isExcepted(Connection.this, e);
                         disconnect();
-                    } catch (Exception e) {
-                        System.out.println("disconnected:");
                     }
                 }
             }
         });
-        connectionThread.setDaemon(true);
         //starting new thread
         connectionThread.start();
     }
 
-    //method processes all messages from clients
-    private void processInMessages(String msg) throws Exception{
-        //help command processing
+    private void processInMessages(String msg){
         if(helpCommand(msg)){
-            sendString("tape \"connect: [NAME]\" to log in.\n\rtape \"disconnect: \" to disconnect\n\r" +
+            sendString("tape \"command: [NAME]\" to log in.\n\rtape \"disconnect: \" to disconnect\n\r" +
                             "tape \"message: [MESSAGE]\" to send message (must be logged in)\n\r");
-        }else
-        //disconnect command processing
-        if(disconnectedCommand(msg)){
-            disconnect();
-        }else
-        //message command processing
-        if(messageCommand(msg) && isLoggedIn()){
-            actionListener.receiveMessage(this, msg.replaceAll("message: ", ""));
-        }else
-        //don't touch this stuff
-        if(connectedCommand(msg) && !isLoggedIn() && correctName(msg) && !nameExists(msg)){
-            loggedIn = true;
-            sendString("connect: ok");
-            this.clientName = msg.replaceAll("connect:\\s", "");
-            //sendString("Welcome in this chat dear " + clientName);
-            actionListener.receiveMessage(this, "logged in successfully!");
-            //be using method receiveNames, sends the server numbers on all connections
-            actionListener.receiveNames(this);
-        }else if(!isLoggedIn() && connectedCommand(msg) && correctName(msg) && nameExists(msg)){
-            sendString("refused: name_in_use");
-            actionListener.log("user " + socket.getInetAddress() + " is trying to use chosen name.");
-        }else if(!isLoggedIn() && connectedCommand(msg) && !correctName(msg) && !nameExists(msg)){
-            sendString("refused: invalid_name");
-            actionListener.log("user " + socket.getInetAddress() + " is trying to use chosen name.");
-        }else if(isLoggedIn() && connectedCommand(msg) && correctName(msg) && !nameExists(msg)){
-            sendString("refused: cannot_change_name");
-            actionListener.log("user " + socket.getInetAddress() + " is trying change his name.");
-        }else{
-            sendString("refused: see_how_to_use_chat");
-            actionListener.log((!isLoggedIn() ? socket.getInetAddress() : clientName) + " wrong_command");
         }
-    }
-    //connection proves whether this name exists or not
-    private boolean nameExists(String val){
-        actionListener.receiveNames(this);
-        //just take the name from message
-        String valName = val.replaceAll("connect: ", "");
-        for(String name : names){
-            if(name != null && valName.equals(name)){
-                return true;
+        if(disconnectedCommand(msg))
+            disconnect();
+
+        if(registrated){
+            if(connectedCommand(msg)){
+                System.out.println("user " + clientName + " is trying to change name.");
+                sendString("you cannot change your name. ");
+            }else {
+                if(messageCommand(msg))
+                    actionListener.receveMessage(this, msg.replaceAll("message: ", ""));
+            }
+        }else {
+            //if user isn't registrated and used correct command,
+            //register this user
+            if(!registrated && connectedCommand(msg)){
+                registrated = true;
+                sendString("connect: ok");
+                this.clientName = msg.replaceAll("connect:\\s", "");
+                //sendString("Welcome in this chat dear " + clientName);
+                actionListener.receveMessage(this, "logged in successfully!");
+            }else{
+                System.out.println("user " + socket.getInetAddress() + " is trying to register.");
+                sendString("please, confirm registration in form \"connect: USER_NAME\"");
             }
         }
-        //return false if name doesn't exist
-        return false;
-    }
-    //================checking with regex===========================
-    private boolean correctName(String val){
-        pattern = Pattern.compile("^[a-zA-Z0-9_]{3,30}");
-        matcher = pattern.matcher(val.replaceAll("connect: ", ""));
-        return matcher.matches();
     }
     private boolean helpCommand(String val){
         pattern = Pattern.compile("^help:");
@@ -154,26 +118,21 @@ class Connection{
         return matcher.matches();
     }
     private boolean connectedCommand(String val){
-        pattern = Pattern.compile("^connect: .{3,30}");
+        pattern = Pattern.compile("^connect: [a-zA-Z0-9_]{3,30}");
         matcher = pattern.matcher(val);
         return matcher.matches();
     }
-    //================checking with regex===========================
     /**
      * Method sends String on client
      * @param msg String must be sent
      */
-    public void sendString(String msg){
+    public synchronized void sendString(String msg){
         try {
-            if(!socket.isClosed() && !socket.isInputShutdown() && !socket.isOutputShutdown()) {
-                //write msg in buffer
-                out.write(msg + "\r\n");
-                //make buffer empty and send string
-                out.flush();
-            }else {
-                disconnect();
-            }
-        } catch (Exception e) {
+            //write msg in buffer
+            out.write(msg+ "\r\n");
+            //make buffer empty and send string
+            out.flush();
+        } catch (IOException e) {
             //in cannot be sent, disconnect and handle exception
             disconnect();
             actionListener.isExcepted(this, e);
@@ -182,93 +141,45 @@ class Connection{
     /**
      * Disconnecting method for each client.
      */
-    public void disconnect(){
-        //if socket isn't closed, send message disconnect
-        //otherwise Stack overflow exception
-
-        //flag to avoid stack overflow
-        //if user just closes terminal disconnect method cannot
-        //figure out, that socket is closed, even if you use socket.isClosed()
-        disconnectedFlag = true;
-        if(!socket.isClosed() && !disconnectedFlag){
+    public synchronized void disconnect(){
+        //if disconnect, interrupt thread and close socket
+        if(!socket.isClosed()){
             sendString("disconnect: ok");
+            //System.out.println("disconnect: ok");
         }
-        //interrupt thread and stop connection
+
         connectionThread.interrupt();
         actionListener.disconnectClient(this);
-        closeSocket();
-    }
-
-    /**
-     * Method disconnects client from server side
-     */
-    public void disconnectServerSide(){
-        //if socket isn't closed, send message disconnect
-        //otherwise Stack overflow exception
-
-        //flag to avoid stack overflow
-        //if user just closes terminal disconnect method cannot
-        //figure out, that socket is closed, even if you use socket.isClosed()
-        disconnectedFlag = true;
-        if(!socket.isClosed() && !disconnectedFlag){
-            sendString("disconnect: ok");
-        }
-        //interrupt thread and stop connection
-        connectionThread.interrupt();
-        closeSocket();
-    }
-
-    /**
-     * Method closes connection socket
-     */
-    private void closeSocket(){
         try {
             socket.close();
-        } catch (Exception e) {
+        } catch (IOException e) {
             //send problem on listener
-            actionListener.log("socket closed.");
+            actionListener.isExcepted(this, e);
+            actionListener.receveMessage(this, toString() + " disconnectedCommand.");
         }
     }
-    //=====================GETTERS & SETTERS=========================
-    public void interruptConnection(){
-        connectionThread.interrupt();
-    }
+
     /**
-     * @return ip address of the client
+     * @return ip address of the client an his name
      */
     @Override
     public String toString() {
         return socket.getInetAddress() + "";
     }
+
     /**
-     * Logged in getter
-     * @return Whether or not is the client loggedIn
+     *
+     * @return Whether or not is the client registrated
      */
-    public boolean isLoggedIn() {
-        return loggedIn;
+    public boolean isRegistrated() {
+        return registrated;
     }
+
     /**
-     * Client name getter
+     *
      * @return Clients name
      */
     public String getClientName(){
         return clientName;
     }
-    /**
-     * Names setter
-     * @param names collection with names of all users in chat
-     */
-    public void setNames(ArrayList<String> names) {
-        this.names = names;
-    }
-
-    /**
-     * Socket getter
-     * @return returns socket for this connection
-     */
-    public Socket getSocket() {
-        return socket;
-    }
-
-    //=====================GETTERS & SETTERS=========================
 }

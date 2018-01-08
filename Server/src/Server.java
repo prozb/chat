@@ -1,150 +1,80 @@
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
-//TODO: This Thread is daemon. Make sure killing this daemon is working properly
-/**
- * @author Pavlo Rozbytskyi
- * @version 1.0.0
- */
+
 public class Server implements IListenable{
     private int port;
+    public static void main(String[] args) {
+        new Server();
+    }
     //all connections are in this collection
-    private ArrayList<Connection> connections;
-    //all names are in this collection
-    private ArrayList<String> names;
-    //file to save logs in
-    private File log;
-    private PrintWriter logMessage;
-    private SimpleDateFormat dataFormat;
-    private Date date;
-    private IInterconnectable gui;
-    private ServerSocket serverSocket;
-    private Thread serverThread;
+    private ArrayList<Connection> connections = new ArrayList<>();
+    private StringBuilder builder = new StringBuilder();
 
-    public Server(IInterconnectable gui){
-        this.gui = gui;
-        this.connections = new ArrayList<>();
-        this.names = new ArrayList<>();
-        this.dataFormat = new SimpleDateFormat("dd/MM/yy HH:mm:ss");
-        this.date = new Date();
-        this.log = new File("log.txt");
-        this.serverSocket = gui.getSocket();
-        try {
-            logMessage = new PrintWriter(new FileWriter(log, true));
-        } catch (IOException e) {
-            System.err.println("cannot create log.txt file.");
-        }
-        log("==============================================");
-        log(String.format("current date: " + dataFormat.format(date)));
-        log("server started.");
-
-        this.serverThread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while (!Thread.currentThread().isInterrupted()) {
-                    try {
-                        serverSocket.setSoTimeout(1000);
-                    } catch (IOException e) {
-                        //Do nothing
-                    }
-                    try{
-                        Socket socket = serverSocket.accept();
-                        //number of connections must be restricted
-                        if (connections.size() < Constants.MAX_CLIENTS_SIZE) {
-                            connected(new Connection(socket, Server.this));
-                        } else {
-                            Connection connection = new Connection(socket, Server.this);
-                            connection.sendString("refused: too_many_users");
-                            log("refused: too_many_users");
-                            connection.disconnect();
-                        }
-                    } catch (IOException e) {
-                    }
-
+    private Server(){
+        //by default is port 6666
+        port = 6666;
+        System.out.println("server started...");
+        while (true){
+            try (ServerSocket serverSocket = new ServerSocket(port);){
+                Socket socket = serverSocket.accept();
+                if(connections.size() < Constants.MAX_CLIENTS_SIZE) {
+                    connected(new Connection(socket, this));
+                }else{
+                    Connection connection = new Connection(socket, this);
+                    connection.sendString("refused: too_many_users");
+                    System.out.println("refused: too_many_users");
+                    connection.disconnect();
                 }
-                System.out.println("server stop");
-                sendOnAll(null, "disconnect:");
-                disconnectAllClients();
-                log(String.format("server stopped at: " + dataFormat.format(date)));
-                log("==============================================");
+
+            } catch (IOException e) {
+                System.out.println("connection cannot be established.");
             }
-        });
-        serverThread.start();
+        }
     }
     @Override
     public synchronized void isExcepted(Connection connection, Exception e) {
-        log(connection.toString() + " excepted: " + e);
+        System.out.println(connection.toString() + " excepted: " + e);
     }
 
     @Override
-    public synchronized void receiveMessage(Connection connection, String value) {
-        log(getClientName(connection) + ": " + value);
+    public synchronized void receveMessage(Connection connection, String value) {
+        System.out.println(getClientName(connection) + ": " + value);
         sendOnAll(connection, getClientName(connection) + " : " + value);
     }
 
     @Override
     public synchronized void connected(Connection connection) {
         connections.add(connection);
-        log(getClientName(connection) + " connected.");
+        System.out.println(getClientName(connection) + " connected.");
+      /*  if(connection.isRegistrated()) {
+            connection.sendString("connect: ok");
+        }*/
+        //connection.sendString("welcome in this chat! ");
+        //connection.sendString(nameList());
         connection.sendString("tape \"help:\" to use this chat. ");
+        //connection.sendString("please, confirm registration in form \"connect: USER_NAME\"");
     }
-    //returns names of all logged in users
-    private ArrayList<String> nameList(){
-        names.clear();
-        String name;
-        for(Connection connection : connections){
-            if(connection.isLoggedIn() && connection.getClientName() != null){
-                name = connection.getClientName();
-                names.add(name);
+
+    private String nameList(){
+        builder.setLength(0);
+        builder.append("namelist");
+        for(Connection val : connections) {
+            if(val.isRegistrated() && val.getClientName() != null) {
+                builder.append(": " + val.getClientName());
             }
         }
-        return names;
+        return builder.toString();
     }
 
     @Override
     public synchronized void disconnectClient(Connection connection) {
         if(connections.contains(connection)) {
-            //connection.interruptConnection();
-            //connection.disconnect();
-            names.remove(connection.getClientName());
             connections.remove(connection);
-            log(getClientName(connection) + " disconnected.");
+            System.out.println(getClientName(connection) + " disconnected.");
             sendOnAll(connection, getClientName(connection) + " disconnected.");
         }
-    }
-
-    @Override
-    public synchronized void receiveNames(Connection connection) {
-        connection.setNames(nameList());
-        //send names on all users
-        if(connection.isLoggedIn() && names.toString() != null){
-            //making name list: [NAME]: {NAME} with simple manipulations
-            String val = names.toString();
-            val = val.replaceAll(",",":");
-            val = val.replaceAll("\\[","");
-            val = val.replaceAll("]","");
-            //send names on all clients
-            for(Connection var : connections){
-                if(var.getClientName() != null) {
-                    var.sendString("name list: " + val);
-                }
-            }
-            log("name list: " + val);
-        }
-    }
-
-    @Override
-    public synchronized void log(String msg) {
-        System.out.println(msg);
-        logMessage.write(msg + "\n");
-        logMessage.flush();
-        gui.sendTextToGui(msg);
     }
 
     /**
@@ -155,40 +85,29 @@ public class Server implements IListenable{
     public void sendOnAll(Connection connection, String msg){
         //send message on all clients except one client
         for(Connection val : connections){
-            if(!val.equals(connection) && val.isLoggedIn()){
+            if(!val.equals(connection) && val.isRegistrated()){
                 val.sendString(msg);
             }
         }
     }
-    //=============================GETTERS & SETTERS======================================
-    /**
-     * @param connection
-     * @return client name if client is logged in, otherwise return ip address
-     */
+
     public String getClientName(Connection connection){
         return connection.getClientName() != null ? connection.getClientName() :
                 connection.toString();
     }
-    //=============================GETTERS & SETTERS======================================
 
     /**
-     * Method disconnects all clients and removes names of clients from the names collection
+     * Proves if this client can have this name
+     * @param connection Current connection
+     * @param name Name to check, whether or not exists.
+     * @return exist or no
      */
-    public void disconnectAllClients(){
-        System.out.println("disconnecting all clients");
-
-        for(int i = connections.size() - 1; i >= 0; i--){
-            log(getClientName(connections.get(i)) + " disconnected.");
-            names.remove(connections.get(i).getClientName());
-            connections.get(i).disconnectServerSide();
-            connections.remove(i);
+/*    public boolean checkName(Connection connection, String name){
+        boolean exists = false;
+        for(Connection var : connections){
+            if(var.getClientName().equals(name))
+                exists = true;
         }
-    }
-    /**
-     * Method finishes server thread
-     */
-    public void finish(){
-        this.serverThread.interrupt();
-        sendOnAll(null,"disconnect:");
-    }
+        return exists;
+    }*/
 }
