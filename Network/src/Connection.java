@@ -90,6 +90,7 @@ class Connection{
         }else
         //disconnect command processing
         if(disconnectedCommand(msg)){
+            this.disconnectedFlag = true;
             disconnect();
         }else
         //message command processing
@@ -190,7 +191,7 @@ class Connection{
         //if user just closes terminal disconnect method cannot
         //figure out, that socket is closed, even if you use socket.isClosed()
         disconnectedFlag = true;
-        if(!socket.isClosed() && !disconnectedFlag){
+        if(!socket.isClosed() && disconnectedFlag){
             sendString("disconnect: ok");
         }
         //interrupt thread and stop connection
