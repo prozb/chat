@@ -1,4 +1,5 @@
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -15,17 +16,17 @@ import java.util.regex.Pattern;
 
 public class ClientGui extends Application implements ISendable {
     private Stage primaryStage;
-    private Scene secondScene;
     private Scene firstScene;
-    private VBox secondLayout;
     private VBox firstLayout;
-    private TextArea textArea;
-    private TextArea firtsTextArea;
-    private Button connectButton;
+    private TextArea firstTextArea;
+    private Button clearButton;
+    private Button exitButton;
     private Button stopButton;
     private Button sendButton;
-    private TextField sendField;
-    private TextField connectField;
+    private Button setNameButton;
+    private TextField setNameField;
+    private TextField messageField;
+    //private TextField connectField;
     private boolean clientStarted;
     private Client client;
     private boolean isLoggedIn;
@@ -34,112 +35,102 @@ public class ClientGui extends Application implements ISendable {
 
 
     private void initFirstScene(){
-        this.connectButton = new Button("Connect");
-        this.connectButton.setPrefWidth(130);
+        this.isLoggedIn = false;
+        this.clientStarted = false;
 
-        this.connectButton.setOnAction(e -> {
-            if(!clientStarted) {
-                this.clientStarted = true;
-                try {
-                    this.client = new Client(ClientGui.this);
-                } catch (Exception e1) {
-                    sendTextToGui("cannot establish connection");
-                    this.clientStarted = false;
-                }
-                String msg = connectField.getText();
-                if (!isLoggedIn && !msg.equals("")) {
+        this.setNameButton = new Button("Set Name");
+        this.setNameButton.setOnAction(e ->{
+            String msg = setNameField.getText();
+
+            if(msg != null && !msg.equals("")) {
+                if (!isLoggedIn && clientStarted) {
+                    client.sendString(Constants.CONNECT + ": " + msg);
+                }else{
+                    createClient();
                     client.sendString(Constants.CONNECT + ": " + msg);
                 }
+            }else{
+                sendTextToGui("please, input your name!");
             }
         });
 
-        this.sendField = new TextField();
-        this.sendField.setEditable(true);
-        this.sendField.setPrefColumnCount(100);
+        this.sendButton = new Button("Send");
+        this.sendButton.setPrefWidth(80);
+        this.sendButton.setDisable(true);
+        this.sendButton.setOnAction(e -> {
+            String msg = messageField.getText();
+            messageField.clear();
+            if(msg != null && !msg.equals("") && clientStarted) {
+                client.sendString(Constants.MESSAGE + ": " + msg);
+                sendTextToGui(Constants.MESSAGE + ": " + msg);
+            }
+        });
 
-        this.connectField = new TextField("Input your name");
+        this.clearButton = new Button("Clear");
+        this.clearButton.setPrefWidth(80);
+        this.clearButton.setOnAction(e ->{
+            firstTextArea.clear();
+        });
+
+        this.stopButton = new Button("Stop");
+        this.stopButton.setPrefWidth(80);
+        this.stopButton.setOnAction(e -> {
+            if(clientStarted) {
+                sendTextToGui(Constants.DISCONNECT + ":");
+            }else{
+                sendTextToGui("you are already disconnected!");
+            }
+        });
+
+        this.exitButton = new Button("Exit");
+        this.exitButton.setPrefWidth(80);
+        this.exitButton.setOnAction(e -> {
+            Platform.exit();
+        });
+
+        this.setNameField = new TextField("input your name");
+        this.setNameField.setEditable(true);
+        this.setNameField.setPrefColumnCount(26);
+
+        this.messageField = new TextField("input your message");
+        this.messageField.setEditable(false);
+        this.messageField.setDisable(true);
+        this.messageField.setPrefColumnCount(26);
 
         this.firstLayout = new VBox();
         this.firstLayout.setAlignment(Pos.CENTER);
         this.firstLayout.setPadding(new Insets(10,25,25,25));
         this.firstScene = new Scene(firstLayout, 500, 300, Color.BLACK);
 
-        this.firtsTextArea = new TextArea();
-        this.firtsTextArea.setEditable(false);
-        this.firtsTextArea.setWrapText(true);
-        this.firtsTextArea.setScrollTop(10);
-        this.firtsTextArea.setPrefHeight(230);
+        this.firstTextArea = new TextArea();
+        this.firstTextArea.setEditable(false);
+        this.firstTextArea.setWrapText(true);
+        this.firstTextArea.setScrollTop(10);
+        this.firstTextArea.setPrefHeight(230);
 
         HBox hBox1 = new HBox();
         hBox1.setPadding(new Insets(10,0,25,0));
-        hBox1.getChildren().add(firtsTextArea);
+        hBox1.getChildren().add(firstTextArea);
         HBox hBox2 = new HBox();
-        hBox2.getChildren().add(connectField);
-        hBox2.setPadding(new Insets(10,0,25,0));
+        hBox2.getChildren().addAll(setNameField, setNameButton);
+        hBox2.setPadding(new Insets(10,0,10, 0));
+        hBox2.setSpacing(29);
         HBox hBox3 = new HBox();
-        hBox3.getChildren().addAll(connectButton);
-        hBox3.setSpacing(70);
-        this.firstLayout.getChildren().addAll(hBox1, hBox2, hBox3);
+        hBox3.getChildren().addAll(messageField, sendButton);
+        hBox3.setPadding(new Insets(10,0,25, 0));
+        hBox3.setSpacing(29);
+        HBox hBox4 = new HBox();
+        hBox4.getChildren().addAll(stopButton, clearButton, exitButton);
+        hBox4.setSpacing(50);
+        this.firstLayout.getChildren().addAll(hBox1, hBox2, hBox3, hBox4);
     }
-    private void initSecondScene(){
-        this.sendButton = new Button("Send");
-        this.sendButton.setOnAction(e -> {
-            String msg = sendField.getText();
-            sendField.clear();
-            if(msg != null && clientStarted && msg != "" && !msg.equals("")){
-                client.sendString(msg);
-            }
-        });
-        this.sendButton.setPrefWidth(130);
 
-        this.stopButton = new Button("Stop");
-        this.stopButton.setOnAction(e -> {
-            if(clientStarted){
-                client.sendString(Constants.DISCONNECT + ":");
-                this.clientStarted = false;
-                this.isLoggedIn = false;
-                this.firtsTextArea.appendText(textArea.getText());
-                this.primaryStage.setScene(firstScene);
-            }else{
-                sendTextToGui("you must establish connection!");
-            }
-        });
-        this.stopButton.setPrefWidth(130);
-
-        this.textArea = new TextArea();
-        this.textArea.setEditable(false);
-        this.textArea.setWrapText(true);
-        this.textArea.setScrollTop(10);
-        this.textArea.setPrefHeight(230);
-
-        this.sendField = new TextField();
-        this.sendField.setEditable(true);
-        this.sendField.setPrefColumnCount(100);
-
-        this.secondLayout = new VBox();
-        this.secondLayout.setAlignment(Pos.CENTER);
-        this.secondLayout.setPadding(new Insets(10,25,25,25));
-        secondScene = new Scene(secondLayout, 500, 300, Color.BLACK);
-
-        HBox hBox1 = new HBox();
-        hBox1.setPadding(new Insets(10,0,25,0));
-        hBox1.getChildren().add(textArea);
-        HBox hBox2 = new HBox();
-        hBox2.getChildren().add(sendField);
-        hBox2.setPadding(new Insets(10,0,25,0));
-        HBox hBox3 = new HBox();
-        hBox3.getChildren().addAll(sendButton, stopButton);
-        hBox3.setSpacing(70);
-        this.secondLayout.getChildren().addAll(hBox1, hBox2, hBox3);
-    }
 
     @Override
     public void init() throws Exception {
         this.isLoggedIn = false;
 
         initFirstScene();
-        initSecondScene();
-        //this.firstScene.setOnC
 
         super.init();
     }
@@ -151,36 +142,61 @@ public class ClientGui extends Application implements ISendable {
         primaryStage.setTitle("Client");
 
 
-        this.primaryStage.setScene(getScene());
+        this.primaryStage.setScene(firstScene);
         this.primaryStage.show();
-    }
-    private Scene getScene(){
-        if(isLoggedIn){
-            return secondScene;
-        }else{
-            return firstScene;
-        }
     }
 
     @Override
     public void sendTextToGui(String text){
-        if(isLoggedIn) {
-            textArea.appendText(text + "\n");
-        }else {
-            if(isConnect(text) && !isLoggedIn) {
-                isLoggedIn = true;
-                this.textArea.appendText(firtsTextArea.getText());
-                //primaryStage.setScene(getScene());
-            }else{
-                this.isLoggedIn = false;
-            }
-            firtsTextArea.appendText(text + "\n");
+        if(isConnect(text)){
+            this.isLoggedIn = true;
+            changeButtonsState(true);
+            sendButton.setDisable(false);
         }
+
+        if(isDisconnect(text) && clientStarted){
+            this.isLoggedIn = false;
+            this.clientStarted = false;
+
+            client.sendString(Constants.DISCONNECT + ":");
+            changeButtonsState(false);
+        }
+        firstTextArea.appendText(text + "\n");
     }
 
+    public void changeButtonsState(boolean state){
+        setNameButton.setDisable(state);
+        setNameField.setDisable(state);
+        setNameField.setEditable(!state);
+
+        messageField.setEditable(state);
+        messageField.setDisable(!state);
+        sendButton.setDisable(!state);
+    }
+
+    public void createClient(){
+        try {
+            this.client = new Client(ClientGui.this);
+            this.clientStarted = true;
+        } catch (Exception e) {
+            sendTextToGui("cannot connect to server!\n");
+            this.clientStarted = false;
+        }
+    }
     public boolean isConnect(String msg){
         pattern = Pattern.compile("^connect: ok$");
         matcher = pattern.matcher(msg);
             return matcher.matches();
+    }
+    public boolean isDisconnect(String msg){
+        pattern = Pattern.compile("^disconnect:$");
+        matcher = pattern.matcher(msg);
+        return matcher.matches();
+    }
+
+    public boolean isMessage(String msg){
+        pattern = Pattern.compile("^message: .+");
+        matcher = pattern.matcher(msg);
+        return matcher.matches();
     }
 }
