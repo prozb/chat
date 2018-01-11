@@ -1,3 +1,7 @@
+package pis.client;
+
+import pis.server.Constants;
+
 import java.io.*;
 import java.net.Socket;
 

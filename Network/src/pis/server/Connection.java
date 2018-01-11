@@ -1,3 +1,5 @@
+package pis.server;
+
 import java.io.*;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -8,6 +10,7 @@ import java.util.regex.Pattern;
  * Class Connection describes connection of each client independent
  * of each other in separate thread.
  * @author Pavlo Rozbytskyi
+ *
  * @version 1.0.0
  */
 class Connection{
@@ -25,18 +28,7 @@ class Connection{
     private ArrayList<String> names;
 
     /**
-     *
-     * @param ip ip address for putty connection
-     * @param port port for putty connection
-     * @param actionListener
-     * @throws IOException Exception if the connection can't be established.
-     */
-    public Connection(String ip, int port, IListenable actionListener) throws IOException {
-        //constructor overloading
-        this(new Socket(ip, port), actionListener);
-    }
-    /**
-     *
+     * Constructor
      * @param socket Socket for each client connection.
      * @param actionListener Client or Server class can be listener.
      */
@@ -58,32 +50,32 @@ class Connection{
             @Override
             public void run() {
                 while (!connectionThread.isInterrupted()){
-                    String msg = null;
+                    String msg;
                     try {
-                        //read message from the stream
+                     //read message from the stream
                         msg = in.readLine();
-                        if(msg != null) {
+                        if (msg != null) {
                             //send message on listener
                             processInMessages(msg);
-                        }else disconnect();
+                        } else disconnect();
                     } catch (IOException e) {
                         //if cannot receive message, disconnect and handle exception
                         actionListener.isExcepted(Connection.this, e);
                         disconnect();
                     } catch (Exception e) {
                         System.out.println("disconnected:");
+                        }
                     }
                 }
-            }
         });
         connectionThread.setDaemon(true);
-        //starting new thread
         connectionThread.start();
     }
 
     //method processes all messages from clients
     private void processInMessages(String msg) throws Exception{
         //help command processing
+        //by using e.g telnet
         if(helpCommand(msg)){
             sendString("tape \"connect: [NAME]\" to log in.\n\rtape \"disconnect: \" to disconnect\n\r" +
                             "tape \"message: [MESSAGE]\" to send message (must be logged in)\n\r");

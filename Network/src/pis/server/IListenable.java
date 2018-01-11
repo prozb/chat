@@ -1,6 +1,10 @@
+package pis.server;
+
 /**
  * Interface must be implemented from your listener
  * and it doesn't matted whether is it client or server.
+ *
+ * @version 1.0.0
  */
 public interface IListenable {
     /**

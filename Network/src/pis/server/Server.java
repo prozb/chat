@@ -1,3 +1,5 @@
+package pis.server;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -7,11 +9,12 @@ import java.net.Socket;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+
 /**
  * @author Pavlo Rozbytskyi
  * @version 1.0.0
  */
-public class Server implements IListenable{
+public class Server implements IListenable {
     //all connections are in this collection
     private ArrayList<Connection> connections;
     //all names are in this collection
