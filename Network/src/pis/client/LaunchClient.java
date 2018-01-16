@@ -22,7 +22,7 @@ import java.util.regex.Pattern;
  *
  * @version 1.0.0
  */
-public class ClientGui extends Application implements ISend {
+public class LaunchClient extends Application implements ISend {
     private Stage primaryStage;
     private Scene firstScene;
     private VBox firstLayout;
@@ -183,7 +183,7 @@ public class ClientGui extends Application implements ISend {
     //creating new client
     private void createClient(){
         try {
-            this.client = new Client(ClientGui.this);
+            this.client = new Client(LaunchClient.this);
             this.clientStarted = true;
         } catch (Exception e) {
             showTextOnGui("cannot connect to server!\n");

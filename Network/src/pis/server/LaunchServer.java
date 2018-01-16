@@ -18,7 +18,7 @@ import java.net.ServerSocket;
  *
  * @version 1.0.0
  */
-public class ServerGui extends Application implements IInterconnect {
+public class LaunchServer extends Application implements IInterconnect {
     private Stage primaryStage;
     private Scene scene;
     private VBox layout;
@@ -44,7 +44,7 @@ public class ServerGui extends Application implements IInterconnect {
         this.startButton.setOnAction(e -> {
             if(!serverStarted) {
                 this.server = null;
-                this.server = new Server(ServerGui.this);
+                this.server = new Server(LaunchServer.this);
                 this.serverStarted = true;
             }else {
                 sendTextToGui("Server has been already started!");

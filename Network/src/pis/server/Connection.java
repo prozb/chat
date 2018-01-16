@@ -60,7 +60,6 @@ class Connection{
                         } else disconnect();
                     } catch (IOException e) {
                         //if cannot receive message, disconnect and handle exception
-                        actionListener.isExcepted(Connection.this, e);
                         disconnect();
                     } catch (Exception e) {
                         System.out.println("disconnected:");
