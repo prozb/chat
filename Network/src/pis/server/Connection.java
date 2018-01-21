@@ -110,6 +110,11 @@ class Connection{
             sendString("refused: see_how_to_use_chat");
             actionListener.log((!isLoggedIn() ? socket.getInetAddress() : clientName) + " wrong_command");
         }
+
+        /*if (receiveNameList(msg)) {
+            actionListener.log("TEST");
+            actionListener.receiveNames(this);
+        }*/
     }
     //connection proves whether this name exists or not
     private boolean nameExists(String val){
@@ -125,6 +130,12 @@ class Connection{
         return false;
     }
     //================checking with regex===========================
+
+    private boolean receiveNameList(String val){
+        pattern = Pattern.compile("^receive_names:$");
+        matcher = pattern.matcher(val.replaceAll("connect: ", ""));
+        return matcher.matches();
+    }
     private boolean correctName(String val){
         pattern = Pattern.compile("^[a-zA-Z0-9_]{3,30}");
         matcher = pattern.matcher(val.replaceAll("connect: ", ""));

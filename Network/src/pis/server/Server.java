@@ -56,7 +56,9 @@ public class Server implements IListenable {
                     Socket socket = serverSocket.accept();
                     //number of connections must be restricted
                     if (connections.size() < Constants.MAX_CLIENTS_SIZE) {
-                        connected(new Connection(socket, Server.this));
+                        Connection conn = new Connection(socket, Server.this);
+                        conn.sendString("name list: " + createNamesList());
+                        connected(conn);
                     } else {
                         Connection connection = new Connection(socket, Server.this);
                         connection.sendString("refused: too_many_users");
@@ -114,6 +116,7 @@ public class Server implements IListenable {
             connections.remove(connection);
             log(getClientName(connection) + " disconnected.");
             sendOnAll(connection, getClientName(connection) + " disconnected.");
+            sendOnAll("name list: " + createNamesList());
         }
     }
 
@@ -123,10 +126,7 @@ public class Server implements IListenable {
         //send names on all users
         if(connection.isLoggedIn() && names.toString() != null){
             //making name list: [NAME]: {NAME} with simple manipulations
-            String val = names.toString();
-            val = val.replaceAll(",",":");
-            val = val.replaceAll("\\[","");
-            val = val.replaceAll("]","");
+            String val = createNamesList();
             //send names on all clients
             for(Connection var : connections){
                 if(var.getClientName() != null) {
@@ -135,6 +135,14 @@ public class Server implements IListenable {
             }
             log("name list: " + val);
         }
+    }
+
+    private String createNamesList(){
+        String val = names.toString();
+        val = val.replaceAll(",",":");
+        val = val.replaceAll("\\[","");
+        val = val.replaceAll("]","");
+        return val;
     }
 
     @Override
@@ -156,6 +164,11 @@ public class Server implements IListenable {
             if(!val.equals(connection) && val.isLoggedIn()){
                 val.sendString(msg);
             }
+        }
+    }
+    private void sendOnAll(String msg){
+        for(Connection val : connections){
+            val.sendString(msg);
         }
     }
     //=============================GETTERS & SETTERS======================================

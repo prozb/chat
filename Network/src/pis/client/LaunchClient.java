@@ -6,6 +6,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
@@ -34,11 +35,13 @@ public class LaunchClient extends Application implements ISend {
     private Button setNameButton;
     private TextField setNameField;
     private TextField messageField;
+    private TextField clientList;
     private boolean clientStarted;
     private Client client;
     private boolean isLoggedIn;
     private Pattern pattern;
     private Matcher matcher;
+    private Label nameListLabel;
 
     //just initialization of gui
     private void initFirstScene(){
@@ -84,6 +87,8 @@ public class LaunchClient extends Application implements ISend {
         this.stopButton.setOnAction(e -> {
             if(clientStarted) {
                 showTextOnGui(Constants.DISCONNECT + ":");
+                setNameField.clear();
+                clientList.clear();
             }else{
                 showTextOnGui("you are already disconnected!");
             }
@@ -99,15 +104,22 @@ public class LaunchClient extends Application implements ISend {
         this.setNameField.setEditable(true);
         this.setNameField.setPrefColumnCount(26);
 
+        this.clientList = new TextField("input your name");
+        this.clientList.setEditable(false);
+        this.clientList.setText("0 clients");
+        this.clientList.setPrefColumnCount(26);
+
         this.messageField = new TextField("input your message");
         this.messageField.setEditable(false);
         this.messageField.setDisable(true);
         this.messageField.setPrefColumnCount(26);
 
+        this.nameListLabel = new Label("are online.");
+
         this.firstLayout = new VBox();
         this.firstLayout.setAlignment(Pos.CENTER);
         this.firstLayout.setPadding(new Insets(10,25,25,25));
-        this.firstScene = new Scene(firstLayout, 500, 300, Color.BLACK);
+        this.firstScene = new Scene(firstLayout, 500, 400, Color.BLACK);
 
         this.firstTextArea = new TextArea();
         this.firstTextArea.setEditable(false);
@@ -129,7 +141,11 @@ public class LaunchClient extends Application implements ISend {
         HBox hBox4 = new HBox();
         hBox4.getChildren().addAll(stopButton, clearButton, exitButton);
         hBox4.setSpacing(50);
-        this.firstLayout.getChildren().addAll(hBox1, hBox2, hBox3, hBox4);
+        HBox hBox5 = new HBox();
+        hBox5.getChildren().addAll(clientList, nameListLabel);
+        hBox5.setSpacing(30);
+        hBox5.setPadding(new Insets(10,0,25, 0));
+        this.firstLayout.getChildren().addAll(hBox1, hBox5, hBox2, hBox3, hBox4);
     }
 
 
@@ -141,11 +157,10 @@ public class LaunchClient extends Application implements ISend {
     }
 
     @Override
-    public void start(Stage primaryStage) throws Exception {
+    public void start(Stage primaryStage) {
         this.primaryStage = primaryStage;
         primaryStage.setResizable(false);
         primaryStage.setTitle("Client");
-
 
         this.primaryStage.setScene(firstScene);
         this.primaryStage.show();
@@ -165,6 +180,13 @@ public class LaunchClient extends Application implements ISend {
 
             client.sendString(Constants.DISCONNECT + ":");
             changeButtonsState(false);
+        }
+
+        if(isNamelist(text)){
+            this.clientList.setText("");
+            String msg = text.replace(":", " ");
+            msg = msg.replace("name list", "");
+            this.clientList.setText(msg);
         }
         firstTextArea.appendText(text + "\n");
     }
@@ -199,6 +221,17 @@ public class LaunchClient extends Application implements ISend {
     }
     private boolean isDisconnect(String msg){
         pattern = Pattern.compile("^disconnect:$");
+        matcher = pattern.matcher(msg);
+        return matcher.matches();
+    }
+    private boolean isNamelist(String msg){
+        pattern = Pattern.compile("^name list: .+");
+        matcher = pattern.matcher(msg);
+        return matcher.matches();
+    }
+
+    private boolean isSomeDisconnected(String msg){
+        pattern = Pattern.compile("disconnected.$");
         matcher = pattern.matcher(msg);
         return matcher.matches();
     }
