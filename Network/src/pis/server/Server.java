@@ -133,7 +133,7 @@ public class Server implements IListenable {
                     var.sendString("name list: " + val);
                 }
             }
-            log("name list: " + val);
+            //log("name list: " + val);
         }
     }
 

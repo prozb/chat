@@ -55,7 +55,7 @@ public class LaunchClient extends Application implements ISend {
             if(msg != null && !msg.equals("")) {
                 if (!isLoggedIn && clientStarted) {
                     client.sendString(Constants.CONNECT + ": " + msg);
-                }else{
+                }else if(!clientStarted){
                     createClient();
                     client.sendString(Constants.CONNECT + ": " + msg);
                 }
@@ -97,6 +97,10 @@ public class LaunchClient extends Application implements ISend {
         this.exitButton = new Button("Exit");
         this.exitButton.setPrefWidth(80);
         this.exitButton.setOnAction(e -> {
+            if(client != null && !client.equals(null)) {
+                client.sendString("disconnect:");
+                client.disconnect();
+            }
             Platform.exit();
         });
 
@@ -188,7 +192,14 @@ public class LaunchClient extends Application implements ISend {
             msg = msg.replace("name list", "");
             this.clientList.setText(msg);
         }
-        firstTextArea.appendText(text + "\n");
+
+        if(isManyUsers(text)){
+            this.clientStarted = false;
+            this.client = null;
+        }
+        if(!isNamelist(text)) {
+            firstTextArea.appendText(text + "\n");
+        }
     }
 
     //method "be never DRY"
@@ -205,8 +216,12 @@ public class LaunchClient extends Application implements ISend {
     //creating new client
     private void createClient(){
         try {
-            this.client = new Client(LaunchClient.this);
-            this.clientStarted = true;
+            try {
+                this.client = new Client(LaunchClient.this);
+                this.clientStarted = true;
+            }catch (Exception e){
+                client.disconnect();
+            }
         } catch (Exception e) {
             showTextOnGui("cannot connect to server!\n");
             this.clientStarted = false;
@@ -217,7 +232,7 @@ public class LaunchClient extends Application implements ISend {
     private boolean isConnect(String msg){
         pattern = Pattern.compile("^connect: ok$");
         matcher = pattern.matcher(msg);
-            return matcher.matches();
+        return matcher.matches();
     }
     private boolean isDisconnect(String msg){
         pattern = Pattern.compile("^disconnect:$");
@@ -230,8 +245,8 @@ public class LaunchClient extends Application implements ISend {
         return matcher.matches();
     }
 
-    private boolean isSomeDisconnected(String msg){
-        pattern = Pattern.compile("disconnected.$");
+    private boolean isManyUsers(String msg){
+        pattern = Pattern.compile("^refused: too_many_users$");
         matcher = pattern.matcher(msg);
         return matcher.matches();
     }

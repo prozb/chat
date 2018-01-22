@@ -83,38 +83,44 @@ class Connection{
         if(disconnectedCommand(msg)){
             this.disconnectedFlag = true;
             disconnect();
-        }else
+        }
         //message command processing
         if(messageCommand(msg) && isLoggedIn()){
             actionListener.receiveMessage(this, msg.replaceAll("message: ", ""));
-        }else
-        //don't touch this stuff
-        if(connectedCommand(msg) && !isLoggedIn() && correctName(msg) && !nameExists(msg)){
+        }
+
+        actionListener.receiveNames(this);
+        int clientsCount = names.size();
+        if(connectedCommand(msg) && !isLoggedIn() && correctName(msg) && !nameExists(msg) &&
+                clientsCount < Constants.MAX_CLIENTS_SIZE){
             loggedIn = true;
+            System.out.println("LOLOLOL");
             sendString("connect: ok");
             this.clientName = msg.replaceAll("connect:\\s", "");
             //sendString("Welcome in this chat dear " + clientName);
             actionListener.receiveMessage(this, "logged in successfully!");
             //be using method receiveNames, sends the server numbers on all connections
-            actionListener.receiveNames(this);
-        }else if(!isLoggedIn() && connectedCommand(msg) && correctName(msg) && nameExists(msg)){
-            sendString("refused: name_in_use");
-            actionListener.log("user " + socket.getInetAddress() + " is trying to use chosen name.");
-        }else if(!isLoggedIn() && connectedCommand(msg) && !correctName(msg) && !nameExists(msg)){
-            sendString("refused: invalid_name");
-            actionListener.log("user " + socket.getInetAddress() + " is trying to use chosen name.");
-        }else if(isLoggedIn() && connectedCommand(msg) && correctName(msg) && !nameExists(msg)){
-            sendString("refused: cannot_change_name");
-            actionListener.log("user " + socket.getInetAddress() + " is trying change his name.");
-        }else{
-            sendString("refused: see_how_to_use_chat");
-            actionListener.log((!isLoggedIn() ? socket.getInetAddress() : clientName) + " wrong_command");
+            //actionListener.receiveNames(this);
         }
 
-        /*if (receiveNameList(msg)) {
-            actionListener.log("TEST");
-            actionListener.receiveNames(this);
-        }*/
+        if(!isLoggedIn() && connectedCommand(msg) && correctName(msg) && nameExists(msg)){
+            sendString("refused: name_in_use");
+            actionListener.log("user " + socket.getInetAddress() + " is trying to use chosen name.");
+        }
+
+        if(!isLoggedIn() && connectedCommand(msg) && !correctName(msg) && !nameExists(msg)){
+            sendString("refused: invalid_name");
+            actionListener.log("user " + socket.getInetAddress() + " is trying to use chosen name.");
+        }
+
+        if(isLoggedIn() && connectedCommand(msg) && correctName(msg) && !nameExists(msg)){
+            sendString("refused: cannot_change_name");
+            actionListener.log("user " + socket.getInetAddress() + " is trying change his name.");
+        }
+//        else{
+//            sendString("refused: see_how_to_use_chat");
+//            actionListener.log((!isLoggedIn() ? socket.getInetAddress() : clientName) + " wrong_command");
+//        }
     }
     //connection proves whether this name exists or not
     private boolean nameExists(String val){
